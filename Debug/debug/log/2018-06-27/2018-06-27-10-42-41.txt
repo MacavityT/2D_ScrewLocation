@@ -1,0 +1,5 @@
+--------------
+2018.06.27 10:42:41:660,DialogShapeModel::start_ui_init(): read image failed!
+--------------
+2018.06.27 10:42:42:457,MainWindow::start_ui_init(): read image error!
+2018.06.27 10:42:59:439,DialogShapeModel::save_templa_image(): error!

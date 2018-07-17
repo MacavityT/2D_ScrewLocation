@@ -1,0 +1,3 @@
+--------------
+2018.06.28 10:58:05:464,MainWindow::start_varia_init(): cam init err!!!
+2018.06.28 10:58:05:520,MainWindow::start_ui_init(): read image error!

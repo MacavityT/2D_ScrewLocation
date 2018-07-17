@@ -1,0 +1,2 @@
+--------------
+2018.06.27 12:15:13:953,MainWindow::start_ui_init(): read image error!
