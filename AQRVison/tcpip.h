@@ -76,7 +76,7 @@ signals:
 
 private:
     QTcpSocket* m_cl_socket;
-    std::function<int(QString, QString&)> func;          //上层协议解析函数
+    std::function<int(QString, QString&)> client_protocol;          //上层协议解析函数
 
     int read();                                          //接收服务端发来的数据
     bool check(const QString& ip, const int& port);      //检测IP，PORT合法性
@@ -101,7 +101,7 @@ signals:
 private:
     QTcpServer* m_server;
     QTcpSocket* m_socket;
-    std::function<int(QString, QString&)> func;          //上层协议解析函数
+    std::function<int(QString, QString&)> server_protocol;          //上层协议解析函数
 
     int read();                                          //接收客户端发来的数据
     bool check(int& port);                               //检测PORT合法性

@@ -4,9 +4,6 @@
 #include "qfile.h"
 #include "qfiledialog.h"
 #include "qdebug.h"
-
-
-//以下仅用于测试
 #include <QLabel>
 #include <QDebug>
 
@@ -36,7 +33,7 @@ DialogShapeModel::~DialogShapeModel()
     delete ui;
 }
 
-//主子窗口传参相机
+//主从窗口传递相机对象
 int DialogShapeModel::cam_init(basler_cam *ptr_cam)
 {
     p_cam = ptr_cam;
@@ -446,6 +443,7 @@ void DialogShapeModel::test()
 {
 }
 
+//下拉列表Index（对应模板编号及螺丝编号）
 void DialogShapeModel::on_combo_ShangStd_activated(int index)
 {
     screw_num=index;

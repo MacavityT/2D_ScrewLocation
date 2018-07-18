@@ -22,7 +22,6 @@ int TcpIp_client::init(QString& ip, uint& port,
     //检测IP，PORT合法性
     if (false == check(ip, (int&)port))
     {
-        //m_log.write(QString("TcpIp_client::init: ip, port error!!!"));
         return -1;
     }
 
@@ -33,7 +32,6 @@ int TcpIp_client::init(QString& ip, uint& port,
     //连接超时
     if (!m_cl_socket->waitForConnected(30000))
     {
-        //m_log.write(QString("TcpIp_client::init: connect timeout!!!"));
         return -2;
     }
 
@@ -41,7 +39,7 @@ int TcpIp_client::init(QString& ip, uint& port,
     QObject::connect(m_cl_socket, &QTcpSocket::readyRead, this, &TcpIp_client::read);
 
     //函数绑定
-    func = f;
+    client_protocol = f;
 
     return 0;
 }
@@ -56,13 +54,12 @@ int TcpIp_client::read()
     //判断消息是否为空
     if (true == ser_data.isEmpty())
     {
-       //m_log.write(QString("TcpIp_client::read: server data is empty!!!"));
        return -1;
     }
 
     //协议解析
     QString res = "";
-    func(ser_data, res);
+    client_protocol(ser_data, res);
 
     //发射信号
     emit tcpip_cli_signal(res);
@@ -75,7 +72,6 @@ int TcpIp_client::write(const QString &content)
 {
     if (-1 == m_cl_socket->write(content.toLocal8Bit()))
     {
-        //m_log.write(QString("TcpIp_client::write: socket write error!!!"));
         return -1;
     }
 
@@ -126,14 +122,12 @@ int TcpIp_server::init(uint &port, const std::function<int(QString, QString&)>& 
     //检测IP，PORT合法性
     if (false == check((int&)port))
     {
-        //m_log.write(QString("TcpIp_server::init: port error!!!"));
         return -1;
     }
 
     //listening
     if (!m_server->listen(QHostAddress::Any, port))
     {
-        //m_log.write(QString("TcpIp_server::init: listening error!!!"));
         return -2;
     }
 
@@ -141,7 +135,7 @@ int TcpIp_server::init(uint &port, const std::function<int(QString, QString&)>& 
     QObject::connect(m_server, &QTcpServer::newConnection, this, &TcpIp_server::newConnection);
 
     //函数绑定
-    func = f;
+    server_protocol = f;
 
     return 0;
 }
@@ -151,7 +145,6 @@ int TcpIp_server::write(const QString &content)
 {
     if (-1 == m_socket->write(content.toLocal8Bit()))
     {
-        //m_log.write(QString("TcpIp_server::write: socket write error!!!"));
         return -1;
     }
 
@@ -188,13 +181,12 @@ int TcpIp_server::read()
     //判断消息是否为空
     if (true == cli_data.isEmpty())
     {
-        //m_log.write(QString("TcpIp_server::read: client data is empty!!!"));
         return -1;
     }
 
     //协议解析
     QString res = "";
-    func(cli_data, res);
+    server_protocol(cli_data, res);
 
     //发射信号
     emit tcpip_ser_signal(res);

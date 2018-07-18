@@ -1,6 +1,6 @@
 ﻿
 #include "AQdata.h"
-
+//构建列表，第一栏为日期时间，后面为xy数据
 AQData::AQData()
 {
     m_path_exe = QCoreApplication::applicationDirPath();
@@ -33,7 +33,7 @@ AQData::AQData()
         return ;
     }
 
-    QString content = QString("日期-时间,pix-x,pix-y\n");
+    QString content = QString("Date-Moment,pix-x,pix-y\n");
     qint64 ires = -1;
     ires = m_file->write(content.toLocal8Bit(), content.toLocal8Bit().length());
     if (-1 == ires)

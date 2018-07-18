@@ -15,23 +15,18 @@ MainWindow::MainWindow(QWidget *parent) :
     //设置界面图标
     setWindowIcon(QIcon(":home.png"));
     ui->setupUi(this);
-
     //初始化参数变量配置   
     start_varia_init();
     std::memset(m_model_index,0,sizeof(int)*30);
-
     //初始化界面设置
     start_ui_init();
-
     //Pushbutton connection
     connect(ui->pushButton_Start, SIGNAL(clicked()), this, SLOT(pushButton_Start()));
     connect(ui->pushButton_Stop, SIGNAL(clicked()), this, SLOT(pushButton_Stop()));
     connect(ui->actionParam, SIGNAL(triggered()), this, SLOT(on_menuParam()));
     connect(ui->actionShapeModel, SIGNAL(triggered()), this, SLOT(on_menuShapeModel()));
-
     //tcp_ip connection
     connect(&m_tcpip_client,SIGNAL(tcpip_cli_signal(QString)),this,SLOT(m_tcpip_slot(QString)));
-
 }
 
 MainWindow::~MainWindow()
@@ -57,7 +52,6 @@ void MainWindow::closeEvent(QCloseEvent *event)
            event->ignore();
            break;
     }
-
 }
 
 //程序运行界面初始化，图像开窗，设置图标
@@ -76,20 +70,20 @@ int MainWindow::start_ui_init()
     int widgetWidth  = ui->widget->width();
     Hlong m_DlgID = (Hlong)hWnd;
     open_window(0,0,widgetWidth,widgetHeight,m_DlgID,"visible", "",&m_win_id);
-    //开机显示图片，后期可更改为显示某logo图片
-    try
-    {
-        read_image(&m_image,"D:\\image\\hongfu\\1\\1.bmp");
-    }
-    catch (HException &except)
-    {
-        cerr<<except.err;
-        m_log.write_log("MainWindow::start_ui_init(): read image error!");
-        return -1;
-    }
-    get_image_size(m_image,&image_width,&image_height);
-    set_part(m_win_id,0,0,image_height,image_width);
-    disp_obj(m_image,m_win_id);
+//    //开机显示图片，后期可更改为显示某logo图片
+//    try
+//    {
+//        read_image(&m_image,"D:\\image\\hongfu\\1\\1.bmp");
+//    }
+//    catch (HException &except)
+//    {
+//        cerr<<except.err;
+//        m_log.write_log("MainWindow::start_ui_init(): read image error!");
+//        return -1;
+//    }
+//    get_image_size(m_image,&image_width,&image_height);
+//    set_part(m_win_id,0,0,image_height,image_width);
+//    disp_obj(m_image,m_win_id);
 
     return 0;
 }
@@ -118,7 +112,6 @@ int MainWindow::hal_read_shape_model()
     QDir dir(m_path_exe + "/match/");
     dir.setFilter(QDir::Files | QDir::NoSymLinks);
     QFileInfoList list = dir.entryInfoList();
-
     //判断文件夹是否存在，不存在则创建
     if (false == dir.exists())
     {
@@ -129,7 +122,6 @@ int MainWindow::hal_read_shape_model()
             return -1;
         }
     }
-
     //读取模板并保存至Map，保存过程中将“match-”字符替换为空字符，并将剩余数字作为Map index
     for (int i = 0; i < list.size(); ++i)
     {
@@ -138,7 +130,6 @@ int MainWindow::hal_read_shape_model()
         QString pattern("^match-\\d+\\.shm$");
         QRegExp rx(pattern);
         bool res = rx.exactMatch(fileInfo.fileName());
-
         if (res)
         {
             int img_num = fileInfo.fileName().replace("match-", "").replace(".shm", "").toInt();
@@ -162,7 +153,6 @@ int MainWindow::hal_read_shape_model()
             continue;
         }
     }
-
     return 0;
 }
 
@@ -173,7 +163,6 @@ int MainWindow::image_show(Hobject& Image,HTuple& findRow,HTuple& findCol,bool b
     get_image_size(Image,&image_width,&image_height);
     set_part(m_win_id,0,0,image_height,image_width);
     disp_obj(m_image,m_win_id);
-
     if(bState == true)
     {
         set_draw(m_win_id,"margin");
@@ -203,7 +192,6 @@ int MainWindow::image_show(Hobject& Image,HTuple& findRow,HTuple& findCol,bool b
         disp_message (m_win_id, ss, "image", 40, 40,
                      "red","false");
     }
-
     return 0;
 }
 
@@ -229,12 +217,10 @@ void MainWindow::pushButton_Snap()
 {
     //开始采集
     m_snap_cam.snap(0);
-
     //Show
     gen_image1(&m_image,"byte",m_cam_width,m_cam_height,(Hlong)m_snap_cam.pImageBuffer[0]);
     set_part(m_win_id,0,0,m_cam_height,m_cam_width);
     disp_obj(m_image,m_win_id);
-
     return ;
 }
 
@@ -250,7 +236,6 @@ void MainWindow::on_pushButton_Stop_clicked()
                                     color: rgb(0,0,0);border-radius:10px;");
     ui->pushButton_Stop->setStyleSheet("background-color:rgb(235,235,235);\
                                     color: rgb(67,67,67);border-radius:10px;");
-
     return ;
 }
 
@@ -302,7 +287,6 @@ void MainWindow::on_pushButton_Start_clicked()
     }
     ui->pushButton_Stop->setEnabled(true);
     ui->pushButton_Start->setEnabled(false);
-
     //更改样式
     ui->pushButton_Start->setStyleSheet("background-color:rgb(235,235,235);\
                                     color: rgb(67,67,67);border-radius:10px;");
@@ -413,6 +397,8 @@ int MainWindow::m_tcpip_slot(QString mes)
     image_show(m_image,py,px,true);
 //    //保存原图及处理后截图，后期取消
 //    image_save(m_image,true,true);
+//    //写入时间及坐标
+//    m_data_file_csv.data_write(pix_x,pix_y);
 
     return 0;
 }
@@ -465,94 +451,8 @@ int MainWindow::cal_offset(double x,double y,double &world_offset_x, double &wor
     return 0;
 }
 
-
-
-/////以下皆为测试函数
-//测试按钮触发函数
-void MainWindow::on_pushButton_TestItem_clicked()
-{
-    //test_unit_image_save();
-    //test_unit_data();
-    //test_unit_cam();
-    //test_unit_calibration();
-    test_unit_model_list();
-    //test_unit_ini();
-
-}
-
-//图片保存测试
-//命名要改：22_13_12_001.bmp -- 日期+时间 如:2018-10-20-10:20:33:012.bmp
-//ImageResult中存储的是结果截图. dump_image
-int MainWindow::test_unit_image_save()
-{
-    image_save(m_image,true,true);
-    return 0;
-}
-
-int MainWindow::test_unit_data()
-{
-    m_data_file_csv.data_write(0.44,0.55);
-    m_data_file_csv.data_write(34.55,27.2233);
-    return 0;
-}
-
-int MainWindow::test_unit_cam()
-{
-    int err = 0;
-    if(0 != m_snap_cam.init())
-    {
-        QMessageBox box;
-        box.setText("Noss");
-        box.exec();
-    }
-
-    m_snap_cam.m_devices;
-    string str = (*(m_snap_cam.m_cams))[0].GetDeviceInfo().GetSerialNumber().c_str();
-    //QString qstr = QString::fromStdString(str);
-
-    err = m_snap_cam.snap(0);
-    err;
-    m_snap_cam.pImageBuffer;
-    //***Show
-    gen_image1(&m_image,"byte",m_snap_cam.m_cam_width,m_snap_cam.m_cam_height,(Hlong)m_snap_cam.pImageBuffer[0]);
-    set_part(m_win_id,0,0,m_snap_cam.m_cam_height,m_snap_cam.m_cam_width);
-    disp_obj(m_image,m_win_id);
-
-    m_snap_cam.exit();
-    return 0;
-}
-
-int MainWindow::test_unit_calibration()
-{
-    double x,y;
-    cal_offset(0.0,0.0,x,y);
-    QMessageBox box;
-    box.setText(QString::number(x,10,2)+" " +QString::number(y,10,2));
-    box.exec();
-
-    return 0;
-}
-
-int MainWindow::test_unit_model_list()
-{
-    hal_read_shape_model();
-
-//    size_t num_model = m_ModelID.size();s
-    //遍历：
-    map<int, Hlong>::iterator iter;
-    for(iter = m_ModelID.begin(); iter != m_ModelID.end(); ++iter)
-    {
-       int key = iter->first;
-       Hlong model_id = iter->second;
-       ui->textBrowser->append(QString::number(key)+" -- "+QString::number(model_id));
-    }
-
-    return 0;
-
-}
-
-
-//加载图片并处理
+/////功能函数，保留暂未使用，方便后期调试使用
+//加载单张图片并处理
 int MainWindow::file_image_to_process()
 {
     QFile file;
@@ -578,7 +478,7 @@ int MainWindow::file_image_to_process()
     return 0;
 }
 
-//打开文件夹
+//打开文件夹,图片连续处理
 int MainWindow::folder_image_to_process()
 {
     //需要Qt刷新机制，或者改为发消息;界面会等待全部运行完后显示
@@ -615,7 +515,7 @@ int MainWindow::folder_image_to_process()
 
 }
 
-//图片保存 Raw Result
+//图片保存（原图及处理后图片，处理后图片为屏幕截图）
 int MainWindow::image_save(Hobject& Image, bool bIsSaveRaw,bool bIsSaveResult)
 {
     //获取当前保存的日期&&时间精确到ms
@@ -724,6 +624,11 @@ int MainWindow::cal_data_ini_read()
     m_ini.read("Cal","PY4",m_cal_data.P4.y);
 
     return 0;
+}
+
+//测试按钮触发函数
+void MainWindow::on_pushButton_TestItem_clicked()
+{
 }
 
 //Test Unit
