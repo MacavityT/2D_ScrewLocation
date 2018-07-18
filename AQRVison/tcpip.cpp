@@ -59,7 +59,11 @@ int TcpIp_client::read()
 
     //协议解析
     QString res = "";
-    client_protocol(ser_data, res);
+    if(client_protocol(ser_data, res)==-1)
+    {
+        //协议解析失败
+        return -1;
+    }
 
     //发射信号
     emit tcpip_cli_signal(res);

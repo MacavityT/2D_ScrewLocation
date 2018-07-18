@@ -76,6 +76,8 @@ public slots:
     int m_tcpip_slot(QString mes);
 
 public:
+    //运行标志位
+    static bool Runtime;
 
     //Hal 视觉部分初始化；视觉参数初始化
     int start_varia_init();

@@ -7,6 +7,7 @@
 
 using namespace Halcon;
 
+bool MainWindow::Runtime=false;
 ////界面构造及初始化
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -227,6 +228,8 @@ void MainWindow::pushButton_Snap()
 //按钮：停止
 void MainWindow::on_pushButton_Stop_clicked()
 {
+    //标志位关闭
+    Runtime=false;
     //disable停止按钮
     ui->pushButton_Stop->setEnabled(false);
     ui->pushButton_Start->setEnabled(true);
@@ -242,6 +245,8 @@ void MainWindow::on_pushButton_Stop_clicked()
 //按钮：开始
 void MainWindow::on_pushButton_Start_clicked()
 {
+    //标志位使能
+    Runtime=true;
     //加载模板
     hal_read_shape_model();
     //加载模板对应关系
@@ -320,17 +325,17 @@ int MainWindow::tcp_init()
 //协议解析函数，解析来自服务器的字符
 int MainWindow::protocol_analysis(QString mes, QString& data)
 {
-    QString key("snap-\\d+");
-    QRegExp filter(key);
-    if(filter.exactMatch(mes))
+    if(Runtime)
     {
-        data=mes.replace("snap-","");
-        return 0;
+        QString key("snap-\\d+");
+        QRegExp filter(key);
+        if(filter.exactMatch(mes))
+        {
+            data=mes.replace("snap-","");
+            return 0;
+        }
     }
-    else
-    {
-        return -1;
-    }
+    return -1;
 }
 
 //tcpip模块触发槽函数，连接至tcp信息接收信号（Qt机制发送）
