@@ -204,7 +204,6 @@ void modbus_tcp_server::send_heartbeat_message()
         return;//连接失效
 
     //发送心跳信号
-    qDebug()<<"set data from thread:" <<QThread::currentThreadId();
     bool status;
     if(heartbeat_flag)
     {

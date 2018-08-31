@@ -126,16 +126,9 @@ int basler_cam::snap(int cam_index)
                //cout << "Error: " << ptrGrabResult->GetErrorCode() << " " << ptrGrabResult->GetErrorDescription() << endl;
            }
         }
-
-        if(ptrGrabResult->GrabSucceeded())
-        {
-
-        }else
-        {
-            //采集失败！！
+        //循环采集五次，结束后再次判断是否成功，以防五次都采集失败
+        if(!ptrGrabResult->GrabSucceeded())
             return -2;
-        }
-
         // Access the image data.
         imageW = ptrGrabResult->GetWidth();
         imageH = ptrGrabResult->GetHeight();
@@ -156,12 +149,6 @@ int basler_cam::snap(int cam_index)
         return -1;
     }
 
-    return 0;
-}
-
-//？？未使用
-int basler_cam::close()
-{
     return 0;
 }
 

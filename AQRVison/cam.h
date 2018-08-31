@@ -41,7 +41,6 @@ public:
     int init();
     int open();
     int snap(int cam_index);
-    int close();
     int exit();
 
 public:

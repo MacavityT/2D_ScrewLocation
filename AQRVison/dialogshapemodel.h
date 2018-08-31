@@ -6,12 +6,14 @@
 #include <QStandardItemModel>
 #include <QMessageBox>
 #include <QCloseEvent>
+#include <QThread>
 
 #include "cpp/HalconCpp.h"
 #include "halfunc.h"
 #include "aqlog.h"
 #include "cam.h"
 #include "inifile.h"
+#include "mythreads.h"
 
 namespace Ui {
 class DialogShapeModel;
@@ -25,37 +27,32 @@ public:
     explicit DialogShapeModel(QWidget *parent = 0);
     ~DialogShapeModel();
     void closeEvent(QCloseEvent* event);
-
     //初始化函数
     int start_param_init();
     int start_ui_init();
-
     //模板列表模块
     void refresh_list();
     void deleteFile();
 
     int draw_show();
     int save_templa_image();
-
     //相机初始化
     int cam_init(basler_cam* ptr_cam);
-
     //QMessage打印
     static void print_qmess(QString& content);
-
     //测试
     void test();
-
+signals:
+    void signal_image_capture();//触发采集线程
 public slots:
     int  ClickButtonPicOne();
     int  ClickButtonCreateShapeModel();
+    void slot_transmit_image(Hobject);
 
 private slots:
     void on_listView_activated(const QModelIndex &index);
 
     void on_pushButton_delete_clicked();
-
-    void on_pushButton_name_clicked();
 
     void on_listView_doubleClicked(const QModelIndex &index);
 
@@ -66,6 +63,8 @@ private slots:
     void on_combo_Type_activated(int index);
 
     void on_pushButton_confirm_clicked();
+
+    void on_pushButtonPicContinue_clicked();
 
 private:
     Ui::DialogShapeModel *ui;
@@ -91,8 +90,11 @@ private:
     QString m_fileName;
     int index_delete;
 
-    //相机
+    //图像采集
+    bool first_trigger=true;
+    QThread m_thread;
     basler_cam* p_cam;
+    MyThreads m_image_capture;
 
     //log打印
     aqlog m_log;

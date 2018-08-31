@@ -14,22 +14,32 @@ DialogShapeModel::DialogShapeModel(QWidget *parent) :
     //设置界面图标
     setWindowIcon(QIcon(":home.png"));
     ui->setupUi(this);
-
     //初始化参数变量配置
     start_param_init();
     //初始化界面设置
     start_ui_init();
-
-    //关联
+    //按钮功能
     connect(ui->pushButtonPicOne,SIGNAL(clicked()), this, SLOT(ClickButtonPicOne()));
     connect(ui->pushButtonCreateShapeModel, SIGNAL(clicked()), this, SLOT(ClickButtonCreateShapeModel()));
     connect(ui->listView,SIGNAL(clicked(QModelIndex)),this,SLOT(on_listView_activated(QModelIndex)));
-
-    refresh_list();
+    //线程采集，数据传输
+    connect(this,SIGNAL(signal_image_capture()),&m_image_capture,SLOT(slot_image_capture()));
+    connect(&m_image_capture,SIGNAL(signal_transmit_image(Hobject)),this,SLOT(slot_transmit_image(Hobject)));
+    //刷新模版列表
+    refresh_list();       
+    //初始化采集线程
+    m_image_capture.moveToThread(&m_thread);
+    m_thread.start();
 }
 
 DialogShapeModel::~DialogShapeModel()
 {
+    //触发标志复位
+    first_trigger=true;
+    //回收线程
+    m_thread.terminate();
+    m_thread.wait();
+    m_thread.deleteLater();
     delete ui;
 }
 
@@ -56,6 +66,20 @@ void DialogShapeModel::closeEvent(QCloseEvent * event )
 int DialogShapeModel::cam_init(basler_cam *ptr_cam)
 {
     p_cam = ptr_cam;
+    return 0;
+}
+
+//界面初始化
+int DialogShapeModel::start_ui_init()
+{
+    //hal WinID
+    HWND hWnd = (HWND)ui->widget->winId();
+    int widgetHeight = ui->widget->height();
+    int widgetWidth  = ui->widget->width();
+    Hlong m_DlgID = (Hlong)hWnd;
+    open_window(0,0,widgetWidth,widgetHeight,m_DlgID,"visible", "",&m_win_id);
+//    set_part(m_win_id,0,0,(*p_cam).m_cam_height,(*p_cam).m_cam_width); 初始化此界面类时，相机类未初始化完成
+    set_part(m_win_id,0,0,1944,2592);
 
     return 0;
 }
@@ -95,36 +119,55 @@ int DialogShapeModel::start_param_init()
     return 0;
 }
 
-//界面初始化
-int DialogShapeModel::start_ui_init()
+//连续采图
+void DialogShapeModel::on_pushButtonPicContinue_clicked()
 {
-    //hal WinID
-    HWND hWnd = (HWND)ui->widget->winId();
-    int widgetHeight = ui->widget->height();
-    int widgetWidth  = ui->widget->width();
-    Hlong m_DlgID = (Hlong)hWnd;
+    //首次触发线程
+    if(first_trigger)
+    {
+        m_image_capture.param_set(p_cam);
+        emit signal_image_capture();
+    }
+    //控件使能
+    bool status=ui->pushButtonPicOne->isEnabled();
+    foreach (QAbstractButton* button, ui->ViewControl->buttons()) {
+        if(button->objectName()!="pushButtonPicContinue")
+        {
+            button->setEnabled(!status);//可以写为下一行，更骚一些，但没啥必要
+//            static_cast<QPushButton*>(button)->setEnabled(!status);
+        }
+    }
+    //线程控制
+    m_image_capture.m_continue=status;
+    if(status)
+        ui->pushButtonPicContinue->setText(tr("停止采图"));
+    else
+        ui->pushButtonPicContinue->setText(tr("连续采图"));
+}
 
-    open_window(0,0,widgetWidth,widgetHeight,m_DlgID,"visible", "",&m_win_id);
+void DialogShapeModel::slot_transmit_image(Hobject image)
+{
+    //获取并显示图像，由线程不断触发
+    disp_obj(image,m_win_id);
+}
+
+//单帧采图
+void DialogShapeModel::on_pushButtonSnapOne_clicked()
+{
+    if(0!=p_cam->snap(0))
+    {
+        print_qmess(QString("Image capture failed!"));
+        return;
+    }
+
+    //获取数据
+    gen_image1(&m_image,"byte",\
+                  (*p_cam).m_cam_width,(*p_cam).m_cam_height,\
+                  (Hlong)(*p_cam).pImageBuffer[0]);
 
     //Show
-    try
-    {
-        read_image(&m_image,"D:\\image\\hongfu\\1\\1.bmp");
-    }
-    catch (HException &except)
-    {
-        m_log.write_log("DialogShapeModel::start_ui_init(): read image failed!");
-        return -1;
-    }
 
-    get_image_size(m_image,&image_width,&image_height);
-    set_part(m_win_id,0,0,image_height,image_width);
     disp_obj(m_image,m_win_id);
-
-    //模板列表界面刷新
-    refresh_list();
-
-    return 0;
 }
 
 //===========加载图片
@@ -143,13 +186,17 @@ int DialogShapeModel::ClickButtonPicOne()
     }
     QByteArray ba = fileName.toLocal8Bit();
     ch = ba.data();
-
-    //操作文件==========
-    read_image(&m_image, ch);
-
+    //读取并显示
+    try
+    {
+        read_image(&m_image, ch);
+    }
+    catch(HException &e)
+    {
+        std::cerr<<e.err;
+    }
     //Show Image
     get_image_size(m_image,&image_width,&image_height);
-    set_part(m_win_id,0,0,image_height,image_width);
     disp_obj(m_image,m_win_id);
 
     file.close();
@@ -158,53 +205,57 @@ int DialogShapeModel::ClickButtonPicOne()
     return 0;
 }
 
+//选择模版对应关系
+void DialogShapeModel::on_combo_ShangStd_activated(int index)
+{
+    screw_num=index;
+}
+
+void DialogShapeModel::on_combo_Type_activated(int index)
+{
+    screw_type=index;
+}
+
+
+//关系确定后命名
+void DialogShapeModel::on_pushButton_confirm_clicked()
+{
+    //判断是否选择螺丝及模板对应关系
+    if(screw_num*screw_type==0)
+    {
+        print_qmess(QString("Plese select the screw and driver number!"));
+        return;
+    }
+    //模版命名
+    QString screw_index,driver_index;
+    driver_index.setNum(screw_type);
+    screw_index.setNum(screw_num);
+    m_fileName=driver_index+'_'+screw_index;
+
+    //开始绘画模板
+    draw_show();
+}
+
 //创建模板
 int DialogShapeModel::ClickButtonCreateShapeModel()
 {
     //判断是否已经为模板命名
     if (m_fileName.isEmpty())
     {
-        print_qmess(QString("请先输入模板名称"));
+        print_qmess(QString("请选择批头及其对应螺丝编号！"));
         return -1;
     }
-    //开始绘画模板
-    draw_show();
     //保存模板及图像
     if (0 != save_templa_image())
     {
         return -1;
     }
-
+    print_qmess(QString("succeed!"));//结果显示
     //刷新list
     strList.append("match-" + m_fileName + ".shm");
     refresh_list();
 
-    print_qmess(QString("succeed!"));
-
-    //清空命名输入框
-    ui->lineEdit_name->setText("");
-    m_fileName = "";
-
     return 0;
-}
-
-//采集图片
-void DialogShapeModel::on_pushButtonSnapOne_clicked()
-{
-    if(0!=p_cam->snap(0))
-    {
-        print_qmess(QString("Image capture failed!"));
-        return;
-    }
-
-    //获取数据
-    gen_image1(&m_image,"byte",\
-                  (*p_cam).m_cam_width,(*p_cam).m_cam_height,\
-                  (Hlong)(*p_cam).pImageBuffer[0]);
-
-    //Show
-    set_part(m_win_id,0,0,(*p_cam).m_cam_height,(*p_cam).m_cam_width);
-    disp_obj(m_image,m_win_id);
 }
 
 //模板创建过程与显示
@@ -298,7 +349,7 @@ int DialogShapeModel::save_templa_image()
     return 0;
 }
 
-//模板删除按钮
+//模板删除按钮，单击模版名后点击删除
 void DialogShapeModel::on_pushButton_delete_clicked()
 {
     switch( QMessageBox::information( this, tr("提示"),
@@ -344,63 +395,6 @@ void DialogShapeModel::deleteFile()
     ui->pushButton_delete->setEnabled(false);
 }
 
-//模板命名按钮
-void DialogShapeModel::on_pushButton_name_clicked()
-{
-    m_fileName = ui->lineEdit_name->text();
-    if (m_fileName.isEmpty())
-    {
-        print_qmess(QString("请先输入数字"));
-    }
-    else
-    {
-        //文本转数字后判断是否相等，若否则非数字命名
-        if ((m_fileName != QString::number(m_fileName.toInt())) ||\
-                (m_fileName.toInt()<1) || (m_fileName.toInt()>4))
-        {
-            print_qmess(QString("请用'1-4'之间的单个数字命名模板"));
-            m_fileName = "";
-            ui->lineEdit_name->setText("");
-            return ;
-        }
-        else
-        {
-            bool search_res = strList.contains("match-" + m_fileName + ".shm");
-            if (search_res)
-            {
-                print_qmess(QString("该命名已存在"));
-                m_fileName = "";
-                ui->lineEdit_name->setText("");
-                return ;
-            }
-
-            print_qmess(QString("模板命名成功，请点击\"创建模板\"按钮"));
-        }
-    }
-}
-
-//模板对应关系写入
-void DialogShapeModel::on_pushButton_confirm_clicked()
-{
-    //判断是否选择螺丝及模板对应关系
-    if(screw_num*screw_type==0)
-    {
-        print_qmess(QString("Plese select the screw number and type!"));
-        return;
-    }
-    //写入对应关系
-    QString screw_index=screw_num+'0';
-    try
-    {
-        m_ini.write("TemplateIndex","ScrewIndex"+screw_index,screw_type);
-    }
-    catch(...)
-    {
-        print_qmess(QString("Save template information failed!"));
-        return;
-    }
-}
-
 //列表元素激活
 void DialogShapeModel::on_listView_activated(const QModelIndex &index)
 {
@@ -408,7 +402,7 @@ void DialogShapeModel::on_listView_activated(const QModelIndex &index)
     index_delete = index.row();
 }
 
-//列表元素双击方法
+//列表元素双击方法，显示保存的模版图片
 void DialogShapeModel::on_listView_doubleClicked(const QModelIndex &index)
 {
     //find the image name
@@ -465,16 +459,4 @@ void DialogShapeModel::print_qmess(QString &content)
 //测试
 void DialogShapeModel::test()
 {
-}
-
-//下拉列表Index（对应模板编号及螺丝编号）
-void DialogShapeModel::on_combo_ShangStd_activated(int index)
-{
-    screw_num=index;
-    qDebug()<<"the index ="<<index;
-}
-
-void DialogShapeModel::on_combo_Type_activated(int index)
-{
-    screw_type=index;
 }

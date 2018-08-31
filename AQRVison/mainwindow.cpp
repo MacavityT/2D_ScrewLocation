@@ -15,9 +15,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     qRegisterMetaType<modbus_tcp_server>("modbus_tcp_server");
-    qDebug()<<"main thread:"<<QThread::currentThreadId();
-    //设置界面图标
-    setWindowIcon(QIcon(":home.png"));
+    qRegisterMetaType<Hobject>("Hobject");
+    //初始化各界面
     ui->setupUi(this);
     //初始化参数变量配置   
     start_varia_init();
@@ -90,8 +89,6 @@ int MainWindow::start_varia_init()
 //        this->setEnabled(false);
         return -1;
     }
-    //传递对象到线程中
-    m_heartbeat.param_set(&m_snap_cam);
 
     return 0;
 }
@@ -99,6 +96,8 @@ int MainWindow::start_varia_init()
 //程序运行界面初始化，图像开窗，设置图标
 int MainWindow::start_ui_init()
 {
+    //设置界面图标
+    setWindowIcon(QIcon(":home.png"));
     //设置图标样式
     ui->pushButton_Start->setIcon(QIcon(":begin.png"));
     ui->pushButton_Stop->setIcon(QIcon(":stop.png"));

@@ -12,17 +12,21 @@ void MyThreads::slot_heartbeat_sender_control(modbus_tcp_server* m_modbus)
         if(m_modbus->main_thread_quit)
             return;
         QThread::sleep(1);
-        qDebug()<<"send data from thread:" <<QThread::currentThreadId();
         m_modbus->send_heartbeat_message();
     }
 }
 
-void MyThreads::slot_image_capture(int window, int enable)
+void MyThreads::slot_image_capture()
 {
-    while (true) {
-        if(enable)
+    Hobject m_image;
+    int m_cam_width=2592;
+    int m_cam_height=1944;
+    while (m_continue) {
+        QThread::sleep(1);
+        if(0==p_cam->snap(0))
         {
-            p_cam->snap(0);
+            gen_image1(&m_image,"byte",m_cam_width,m_cam_height,(Hlong)p_cam->pImageBuffer[0]);
+            emit signal_transmit_image(m_image);
         }
     }
 }
