@@ -1,0 +1,8 @@
+<RCC>
+    <qresource prefix="/">
+        <file>AqLogo.PNG</file>
+        <file>home.png</file>
+        <file>begin.png</file>
+        <file>stop.png</file>
+    </qresource>
+</RCC>

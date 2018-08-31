@@ -1,4 +1,4 @@
-﻿#include "dialog.h"
+﻿#include "dialogcalibration.h"
 #include "ui_dialog.h"
 
 ////界面构造及内部参数初始化

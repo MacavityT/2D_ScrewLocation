@@ -1,0 +1,74 @@
+/*
+#include <QMutex>
+#include <QString>
+#include <QDebug>
+#include <QFile>
+
+class CLog
+{
+private:
+    CLog();
+
+
+public:
+    static CLog *GetSingleObj();
+
+    void printLog(const QString &);
+
+private:
+
+    static CLog *m_pSingleLog;
+
+    QFile *m_pLogFile;
+
+    QMutex *m_pMutex;
+
+};
+
+
+//endif // CLOG_H
+
+
+#include "clog.h"
+
+
+CLog::CLog()
+{
+    m_pLogFile = new QFile("./log.txt");
+    m_pMutex = new QMutex();
+}
+
+CLog *CLog::m_pSingleLog = NULL;
+
+CLog *CLog::GetSingleObj()
+{
+    if(m_pSingleLog == NULL)
+    {
+        m_pSingleLog = new CLog();
+
+
+        Q_ASSERT(m_pSingleLog);
+    }
+
+    return m_pSingleLog;
+}
+
+void CLog::printLog(const QString &log)
+{
+    m_pMutex->lock();
+    //release 模式下写log文件中
+//ifdef QT_NO_DEBUG
+//    m_pLogFile->open(QIODevice::WriteOnly | QIODevice::Append);
+//    QTextStream text_stream(m_pLogFile);
+//    text_stream << log << "\r\n";
+//    m_pLogFile->flush();
+//    m_pLogFile->close();
+//else
+//    qDebug(log.toStdString().c_str());
+//endif
+
+
+    m_pMutex->unlock();
+}
+
+*/
