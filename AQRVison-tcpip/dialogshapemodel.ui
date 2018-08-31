@@ -1,0 +1,422 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>DialogShapeModel</class>
+ <widget class="QDialog" name="DialogShapeModel">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1024</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="font">
+   <font>
+    <pointsize>9</pointsize>
+   </font>
+  </property>
+  <property name="windowTitle">
+   <string>Dialog</string>
+  </property>
+  <widget class="QWidget" name="widget" native="true">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>10</y>
+     <width>741</width>
+     <height>481</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButtonSnapOne">
+   <property name="geometry">
+    <rect>
+     <x>770</x>
+     <y>20</y>
+     <width>111</width>
+     <height>61</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>采集图片</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButtonPicOne">
+   <property name="geometry">
+    <rect>
+     <x>900</x>
+     <y>20</y>
+     <width>111</width>
+     <height>61</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>加载图片</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButtonCreateShapeModel">
+   <property name="geometry">
+    <rect>
+     <x>770</x>
+     <y>100</y>
+     <width>111</width>
+     <height>61</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>创建模板</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label">
+   <property name="geometry">
+    <rect>
+     <x>770</x>
+     <y>260</y>
+     <width>161</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>已存在的模板:</string>
+   </property>
+  </widget>
+  <widget class="QListView" name="listView">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="geometry">
+    <rect>
+     <x>770</x>
+     <y>291</y>
+     <width>241</width>
+     <height>171</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButton_delete">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="geometry">
+    <rect>
+     <x>770</x>
+     <y>480</y>
+     <width>93</width>
+     <height>28</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>删除</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButton_2">
+   <property name="geometry">
+    <rect>
+     <x>920</x>
+     <y>480</y>
+     <width>93</width>
+     <height>28</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>测试</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="lineEdit_name">
+   <property name="geometry">
+    <rect>
+     <x>770</x>
+     <y>200</y>
+     <width>241</width>
+     <height>21</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButton_name">
+   <property name="geometry">
+    <rect>
+     <x>920</x>
+     <y>230</y>
+     <width>93</width>
+     <height>28</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>命名</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_2">
+   <property name="geometry">
+    <rect>
+     <x>770</x>
+     <y>180</y>
+     <width>251</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>模板命名(名字与模板类型编号匹配):</string>
+   </property>
+  </widget>
+  <widget class="QGroupBox" name="groupBox">
+   <property name="geometry">
+    <rect>
+     <x>150</x>
+     <y>510</y>
+     <width>481</width>
+     <height>61</height>
+    </rect>
+   </property>
+   <property name="title">
+    <string>模板对应</string>
+   </property>
+   <widget class="QLabel" name="label_3">
+    <property name="geometry">
+     <rect>
+      <x>180</x>
+      <y>20</y>
+      <width>41</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>编号</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignCenter</set>
+    </property>
+   </widget>
+   <widget class="QComboBox" name="combo_ShangStd">
+    <property name="geometry">
+     <rect>
+      <x>220</x>
+      <y>20</y>
+      <width>80</width>
+      <height>30</height>
+     </rect>
+    </property>
+    <item>
+     <property name="text">
+      <string>请选择</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>螺丝1</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>螺丝2</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>螺丝3</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>螺丝4</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>螺丝5</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>螺丝6</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>螺丝7</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>螺丝8</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>螺丝9</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>螺丝10</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>螺丝11</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>螺丝12</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>螺丝13</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>螺丝14</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>螺丝15</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>螺丝16</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>螺丝17</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>螺丝18</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>螺丝19</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>螺丝20</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>螺丝21</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>螺丝22</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>螺丝23</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>螺丝24</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>螺丝25</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>螺丝26</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>螺丝27</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>螺丝28</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>螺丝29</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>螺丝30</string>
+     </property>
+    </item>
+   </widget>
+   <widget class="QLabel" name="label_4">
+    <property name="geometry">
+     <rect>
+      <x>310</x>
+      <y>20</y>
+      <width>41</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>类型</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignCenter</set>
+    </property>
+   </widget>
+   <widget class="QComboBox" name="combo_Type">
+    <property name="geometry">
+     <rect>
+      <x>350</x>
+      <y>20</y>
+      <width>80</width>
+      <height>30</height>
+     </rect>
+    </property>
+    <item>
+     <property name="text">
+      <string>请选择</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>1</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>2</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>3</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>4</string>
+     </property>
+    </item>
+   </widget>
+   <widget class="QPushButton" name="pushButton_confirm">
+    <property name="geometry">
+     <rect>
+      <x>80</x>
+      <y>20</y>
+      <width>80</width>
+      <height>30</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>确定</string>
+    </property>
+   </widget>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

@@ -1,0 +1,2 @@
+--------------
+2018.08.27 15:22:26:364,MainWindow::start_varia_init(): cam init err!!!

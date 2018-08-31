@@ -39,6 +39,7 @@ public:
     QLabel *label_2;
     QTextBrowser *textBrowser;
     QPushButton *pushButton_TestItem;
+    QPushButton *pushButton_Connect;
     QMenuBar *menuBar;
     QMenu *menu;
     QToolBar *mainToolBar;
@@ -48,7 +49,7 @@ public:
     {
         if (MainWindow->objectName().isEmpty())
             MainWindow->setObjectName(QStringLiteral("MainWindow"));
-        MainWindow->resize(1155, 639);
+        MainWindow->resize(1024, 600);
         QFont font;
         font.setPointSize(12);
         MainWindow->setFont(font);
@@ -68,7 +69,7 @@ public:
         widget->setMinimumSize(QSize(0, 0));
         pushButton_Start = new QPushButton(centralWidget);
         pushButton_Start->setObjectName(QStringLiteral("pushButton_Start"));
-        pushButton_Start->setGeometry(QRect(780, 190, 131, 61));
+        pushButton_Start->setGeometry(QRect(790, 130, 81, 31));
         QFont font2;
         font2.setFamily(QStringLiteral("Agency FB"));
         font2.setPointSize(12);
@@ -79,12 +80,12 @@ public:
         pushButton_Stop = new QPushButton(centralWidget);
         pushButton_Stop->setObjectName(QStringLiteral("pushButton_Stop"));
         pushButton_Stop->setEnabled(false);
-        pushButton_Stop->setGeometry(QRect(980, 190, 131, 61));
+        pushButton_Stop->setGeometry(QRect(900, 130, 81, 31));
         pushButton_Stop->setFont(font2);
         label_2 = new QLabel(centralWidget);
         label_2->setObjectName(QStringLiteral("label_2"));
         label_2->setEnabled(true);
-        label_2->setGeometry(QRect(780, 20, 341, 101));
+        label_2->setGeometry(QRect(780, 20, 221, 91));
         QSizePolicy sizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
         sizePolicy.setHorizontalStretch(5);
         sizePolicy.setVerticalStretch(0);
@@ -98,10 +99,20 @@ public:
         label_2->setScaledContents(true);
         textBrowser = new QTextBrowser(centralWidget);
         textBrowser->setObjectName(QStringLiteral("textBrowser"));
-        textBrowser->setGeometry(QRect(780, 310, 331, 192));
+        textBrowser->setGeometry(QRect(780, 390, 221, 111));
+        textBrowser->setStyleSheet(QStringLiteral("font: 9pt \"Agency FB\";"));
         pushButton_TestItem = new QPushButton(centralWidget);
         pushButton_TestItem->setObjectName(QStringLiteral("pushButton_TestItem"));
-        pushButton_TestItem->setGeometry(QRect(1000, 510, 111, 51));
+        pushButton_TestItem->setGeometry(QRect(790, 180, 81, 31));
+        QFont font3;
+        font3.setFamily(QStringLiteral("Aharoni"));
+        font3.setBold(true);
+        font3.setWeight(75);
+        pushButton_TestItem->setFont(font3);
+        pushButton_Connect = new QPushButton(centralWidget);
+        pushButton_Connect->setObjectName(QStringLiteral("pushButton_Connect"));
+        pushButton_Connect->setGeometry(QRect(900, 180, 81, 31));
+        pushButton_Connect->setFont(font3);
         MainWindow->setCentralWidget(centralWidget);
         widget->raise();
         pushButton_Stop->raise();
@@ -109,9 +120,10 @@ public:
         label_2->raise();
         textBrowser->raise();
         pushButton_TestItem->raise();
+        pushButton_Connect->raise();
         menuBar = new QMenuBar(MainWindow);
         menuBar->setObjectName(QStringLiteral("menuBar"));
-        menuBar->setGeometry(QRect(0, 0, 1155, 33));
+        menuBar->setGeometry(QRect(0, 0, 1024, 33));
         menuBar->setFont(font);
         menu = new QMenu(menuBar);
         menu->setObjectName(QStringLiteral("menu"));
@@ -125,9 +137,9 @@ public:
         sizePolicy1.setVerticalStretch(0);
         sizePolicy1.setHeightForWidth(mainToolBar->sizePolicy().hasHeightForWidth());
         mainToolBar->setSizePolicy(sizePolicy1);
-        QFont font3;
-        font3.setPointSize(20);
-        mainToolBar->setFont(font3);
+        QFont font4;
+        font4.setPointSize(20);
+        mainToolBar->setFont(font4);
         MainWindow->addToolBar(Qt::TopToolBarArea, mainToolBar);
         statusBar = new QStatusBar(MainWindow);
         statusBar->setObjectName(QStringLiteral("statusBar"));
@@ -152,6 +164,7 @@ public:
         pushButton_Stop->setText(QApplication::translate("MainWindow", "\345\201\234\346\255\242", Q_NULLPTR));
         label_2->setText(QString());
         pushButton_TestItem->setText(QApplication::translate("MainWindow", "\346\265\213\350\257\225", Q_NULLPTR));
+        pushButton_Connect->setText(QApplication::translate("MainWindow", "\350\277\236\346\216\245", Q_NULLPTR));
         menu->setTitle(QApplication::translate("MainWindow", "\347\263\273\347\273\237", Q_NULLPTR));
     } // retranslateUi
 

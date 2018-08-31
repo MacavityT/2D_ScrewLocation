@@ -40,75 +40,79 @@ public:
     QPushButton *pushButton_name;
     QLabel *label_2;
     QGroupBox *groupBox;
-    QLabel *label_3;
-    QComboBox *combo_ShangStd;
     QLabel *label_4;
     QComboBox *combo_Type;
     QPushButton *pushButton_confirm;
+    QLabel *label_3;
+    QComboBox *combo_ShangStd;
+    QPushButton *pushButtonSaveOne;
 
     void setupUi(QDialog *DialogShapeModel)
     {
         if (DialogShapeModel->objectName().isEmpty())
             DialogShapeModel->setObjectName(QStringLiteral("DialogShapeModel"));
-        DialogShapeModel->resize(941, 528);
+        DialogShapeModel->resize(1024, 600);
         QFont font;
         font.setPointSize(9);
         DialogShapeModel->setFont(font);
         widget = new QWidget(DialogShapeModel);
         widget->setObjectName(QStringLiteral("widget"));
-        widget->setGeometry(QRect(20, 10, 631, 441));
+        widget->setGeometry(QRect(20, 10, 741, 481));
         pushButtonSnapOne = new QPushButton(DialogShapeModel);
         pushButtonSnapOne->setObjectName(QStringLiteral("pushButtonSnapOne"));
-        pushButtonSnapOne->setGeometry(QRect(670, 10, 111, 61));
+        pushButtonSnapOne->setGeometry(QRect(770, 20, 111, 61));
         pushButtonPicOne = new QPushButton(DialogShapeModel);
         pushButtonPicOne->setObjectName(QStringLiteral("pushButtonPicOne"));
-        pushButtonPicOne->setGeometry(QRect(800, 10, 111, 61));
+        pushButtonPicOne->setGeometry(QRect(770, 100, 111, 61));
         pushButtonCreateShapeModel = new QPushButton(DialogShapeModel);
         pushButtonCreateShapeModel->setObjectName(QStringLiteral("pushButtonCreateShapeModel"));
-        pushButtonCreateShapeModel->setGeometry(QRect(670, 90, 111, 61));
+        pushButtonCreateShapeModel->setGeometry(QRect(900, 100, 111, 61));
         label = new QLabel(DialogShapeModel);
         label->setObjectName(QStringLiteral("label"));
-        label->setGeometry(QRect(670, 250, 161, 31));
+        label->setGeometry(QRect(770, 260, 161, 31));
         listView = new QListView(DialogShapeModel);
         listView->setObjectName(QStringLiteral("listView"));
         listView->setEnabled(true);
-        listView->setGeometry(QRect(670, 281, 241, 171));
+        listView->setGeometry(QRect(770, 291, 241, 171));
         pushButton_delete = new QPushButton(DialogShapeModel);
         pushButton_delete->setObjectName(QStringLiteral("pushButton_delete"));
         pushButton_delete->setEnabled(false);
-        pushButton_delete->setGeometry(QRect(670, 470, 93, 28));
+        pushButton_delete->setGeometry(QRect(770, 480, 93, 28));
         pushButton_2 = new QPushButton(DialogShapeModel);
         pushButton_2->setObjectName(QStringLiteral("pushButton_2"));
-        pushButton_2->setGeometry(QRect(820, 470, 93, 28));
+        pushButton_2->setGeometry(QRect(920, 480, 93, 28));
         lineEdit_name = new QLineEdit(DialogShapeModel);
         lineEdit_name->setObjectName(QStringLiteral("lineEdit_name"));
-        lineEdit_name->setGeometry(QRect(670, 190, 241, 21));
+        lineEdit_name->setGeometry(QRect(770, 200, 241, 21));
         pushButton_name = new QPushButton(DialogShapeModel);
         pushButton_name->setObjectName(QStringLiteral("pushButton_name"));
-        pushButton_name->setGeometry(QRect(820, 220, 93, 28));
+        pushButton_name->setGeometry(QRect(920, 230, 93, 28));
         label_2 = new QLabel(DialogShapeModel);
         label_2->setObjectName(QStringLiteral("label_2"));
-        label_2->setGeometry(QRect(670, 170, 251, 16));
+        label_2->setGeometry(QRect(770, 180, 251, 16));
         groupBox = new QGroupBox(DialogShapeModel);
         groupBox->setObjectName(QStringLiteral("groupBox"));
-        groupBox->setGeometry(QRect(80, 460, 481, 61));
-        label_3 = new QLabel(groupBox);
-        label_3->setObjectName(QStringLiteral("label_3"));
-        label_3->setGeometry(QRect(180, 20, 41, 31));
-        label_3->setAlignment(Qt::AlignCenter);
-        combo_ShangStd = new QComboBox(groupBox);
-        combo_ShangStd->setObjectName(QStringLiteral("combo_ShangStd"));
-        combo_ShangStd->setGeometry(QRect(220, 20, 80, 30));
+        groupBox->setGeometry(QRect(150, 510, 481, 61));
         label_4 = new QLabel(groupBox);
         label_4->setObjectName(QStringLiteral("label_4"));
-        label_4->setGeometry(QRect(310, 20, 41, 31));
+        label_4->setGeometry(QRect(170, 20, 41, 31));
         label_4->setAlignment(Qt::AlignCenter);
         combo_Type = new QComboBox(groupBox);
         combo_Type->setObjectName(QStringLiteral("combo_Type"));
-        combo_Type->setGeometry(QRect(350, 20, 80, 30));
+        combo_Type->setGeometry(QRect(220, 20, 80, 30));
         pushButton_confirm = new QPushButton(groupBox);
         pushButton_confirm->setObjectName(QStringLiteral("pushButton_confirm"));
-        pushButton_confirm->setGeometry(QRect(80, 20, 80, 30));
+        pushButton_confirm->setGeometry(QRect(70, 20, 80, 30));
+        label_3 = new QLabel(groupBox);
+        label_3->setObjectName(QStringLiteral("label_3"));
+        label_3->setGeometry(QRect(320, 20, 41, 31));
+        label_3->setAlignment(Qt::AlignCenter);
+        combo_ShangStd = new QComboBox(groupBox);
+        combo_ShangStd->setObjectName(QStringLiteral("combo_ShangStd"));
+        combo_ShangStd->setGeometry(QRect(360, 20, 80, 30));
+        pushButtonSaveOne = new QPushButton(DialogShapeModel);
+        pushButtonSaveOne->setObjectName(QStringLiteral("pushButtonSaveOne"));
+        pushButtonSaveOne->setGeometry(QRect(900, 20, 111, 61));
 
         retranslateUi(DialogShapeModel);
 
@@ -126,7 +130,17 @@ public:
         pushButton_2->setText(QApplication::translate("DialogShapeModel", "\346\265\213\350\257\225", Q_NULLPTR));
         pushButton_name->setText(QApplication::translate("DialogShapeModel", "\345\221\275\345\220\215", Q_NULLPTR));
         label_2->setText(QApplication::translate("DialogShapeModel", "\346\250\241\346\235\277\345\221\275\345\220\215(\345\220\215\345\255\227\344\270\216\346\250\241\346\235\277\347\261\273\345\236\213\347\274\226\345\217\267\345\214\271\351\205\215):", Q_NULLPTR));
-        groupBox->setTitle(QApplication::translate("DialogShapeModel", "\346\250\241\346\235\277\345\257\271\345\272\224", Q_NULLPTR));
+        groupBox->setTitle(QApplication::translate("DialogShapeModel", "\351\200\211\346\213\251\350\236\272\344\270\235\347\274\226\345\217\267", Q_NULLPTR));
+        label_4->setText(QApplication::translate("DialogShapeModel", "\346\211\271\345\244\264\345\217\267", Q_NULLPTR));
+        combo_Type->clear();
+        combo_Type->insertItems(0, QStringList()
+         << QApplication::translate("DialogShapeModel", "\350\257\267\351\200\211\346\213\251", Q_NULLPTR)
+         << QApplication::translate("DialogShapeModel", "1", Q_NULLPTR)
+         << QApplication::translate("DialogShapeModel", "2", Q_NULLPTR)
+         << QApplication::translate("DialogShapeModel", "3", Q_NULLPTR)
+         << QApplication::translate("DialogShapeModel", "4", Q_NULLPTR)
+        );
+        pushButton_confirm->setText(QApplication::translate("DialogShapeModel", "\347\241\256\345\256\232", Q_NULLPTR));
         label_3->setText(QApplication::translate("DialogShapeModel", "\347\274\226\345\217\267", Q_NULLPTR));
         combo_ShangStd->clear();
         combo_ShangStd->insertItems(0, QStringList()
@@ -162,16 +176,7 @@ public:
          << QApplication::translate("DialogShapeModel", "\350\236\272\344\270\23529", Q_NULLPTR)
          << QApplication::translate("DialogShapeModel", "\350\236\272\344\270\23530", Q_NULLPTR)
         );
-        label_4->setText(QApplication::translate("DialogShapeModel", "\347\261\273\345\236\213", Q_NULLPTR));
-        combo_Type->clear();
-        combo_Type->insertItems(0, QStringList()
-         << QApplication::translate("DialogShapeModel", "\350\257\267\351\200\211\346\213\251", Q_NULLPTR)
-         << QApplication::translate("DialogShapeModel", "1", Q_NULLPTR)
-         << QApplication::translate("DialogShapeModel", "2", Q_NULLPTR)
-         << QApplication::translate("DialogShapeModel", "3", Q_NULLPTR)
-         << QApplication::translate("DialogShapeModel", "4", Q_NULLPTR)
-        );
-        pushButton_confirm->setText(QApplication::translate("DialogShapeModel", "\347\241\256\345\256\232", Q_NULLPTR));
+        pushButtonSaveOne->setText(QApplication::translate("DialogShapeModel", "\344\277\235\345\255\230\345\233\276\347\211\207", Q_NULLPTR));
     } // retranslateUi
 
 };
