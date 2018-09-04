@@ -12,6 +12,7 @@
 #include <QTcpSocket>
 #include <QRegExp>
 #include <QThread>
+#include <QTextCodec>
 #include <map>
 
 #include "cpp/HalconCpp.h"
@@ -56,31 +57,16 @@ public:
 public:
     //运行标志位
     static bool Runtime;
-
-    //Hal 视觉部分初始化；视觉参数初始化
-    int start_varia_init();
-    int start_ui_init();
-    int hal_read_shape_model();
-
-    //核心图像处理
-    int image_process(Hobject& Image,Hlong model_id,double& pix_x,double& pix_y);
-    int cal_offset(double x,double y,
-         double &world_offset_x, double &world_offset_y);
-    int cal_data_ini_read();
-
-    int image_show(Hobject& Image,HTuple& findRow,HTuple& findCol,bool bState);
-
-    //文件打开处理
-    int file_image_to_process();
-    int folder_image_to_process();
     //data模块
     AQData m_data_file_csv;
     //采集模块
     basler_cam m_snap_cam;
+    int m_cam_width,m_cam_height;
     //参数管理
     Dialog m_param_dialog;
     DialogShapeModel m_shape_model_dialog;
     //ini
+    QString m_path_exe;//路径
     IniFile m_ini;
     struct cal_data m_cal_data;
     //图片保存
@@ -94,24 +80,32 @@ public:
     QThread m_thread_heartbeat;
     MyThreads  m_heartbeat;
     modbus_tcp_server m_modbus;
-    //Hal obj
-    Hlong m_win_id;
+    //Hal param
     Hobject m_image;
     Hobject m_region;
+    Hlong m_win_id;
     Hlong image_width,image_height;
-    //HTuple findRow,findCol,findAngle, findScore;
     HTuple worldX, worldY;
     HTuple HomMat2D;
-    //Hal param
-
     //模板ID：不存在的模板设置为-1
     map<int, map<int, Hlong>> m_ModelID;
     int m_model_type;
     int m_model_index;
 
-    QString m_path_exe;
-
-    int m_cam_width,m_cam_height;
+    //文件打开处理
+    int file_image_to_process();
+    int folder_image_to_process();
+    //Hal 视觉部分初始化；视觉参数初始化
+    int start_varia_init();
+    int start_ui_init();
+    int hal_read_shape_model();
+    int cal_data_ini_read();
+    //图像处理
+    int image_process(Hobject& Image,Hlong model_id,double& pix_x,double& pix_y);
+    int cal_offset(double x,double y,
+         double &world_offset_x, double &world_offset_y);    
+    //处理后显示
+    int image_show(Hobject& Image,HTuple& findRow,HTuple& findCol,bool bState);
 
 private:
     Ui::MainWindow *ui;

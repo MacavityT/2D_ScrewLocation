@@ -36,6 +36,7 @@ public:
 //        }
 //        return *this;
 //    }
+    QModbusTcpServer *modbusDevice;
 
     //默认构造函数
     modbus_tcp_server();
@@ -51,7 +52,7 @@ public:
 private:
     //Control object
     IniFile m_ini_reader;
-    QModbusServer *modbusDevice;
+
     //connect parameters
     QString port;
     int server_address;

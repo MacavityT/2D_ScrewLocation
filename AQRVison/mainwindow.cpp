@@ -14,6 +14,9 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
+    //支持中文
+//    QTextCodec::setCodecForLocale(QTextCodec::codecForName("utf-8"));
+    //注册类型
     qRegisterMetaType<modbus_tcp_server>("modbus_tcp_server");
     qRegisterMetaType<Hobject>("Hobject");
     //初始化各界面
@@ -23,8 +26,6 @@ MainWindow::MainWindow(QWidget *parent) :
     //初始化界面设置
     start_ui_init();
     //Pushbutton connection
-    connect(ui->pushButton_Start, SIGNAL(clicked()), this, SLOT(pushButton_Start()));
-    connect(ui->pushButton_Stop, SIGNAL(clicked()), this, SLOT(pushButton_Stop()));
     connect(ui->actionParam, SIGNAL(triggered()), this, SLOT(on_menuParam()));
     connect(ui->actionShapeModel, SIGNAL(triggered()), this, SLOT(on_menuShapeModel()));
     //连接主流程与通信类
@@ -144,19 +145,42 @@ int MainWindow::hal_read_shape_model()
     //读取模板并保存至Map，保存过程中将“match-”字符替换为空字符，并将剩余数字作为Map index
     for (int i = 0; i < list.size(); ++i)
     {
-        //文件名是否合法检测
+        //正则表达式检测文件
         QFileInfo fileInfo = list.at(i);
-        QString pattern("^match-\\d+\\.shm$");
+        QString pattern("^match-\\d+\\_+\\d+\\.shm$");
         QRegExp rx(pattern);
         bool res = rx.exactMatch(fileInfo.fileName());
         if (res)
         {
-            int img_num = fileInfo.fileName().replace("match-", "").replace(".shm", "").toInt();
-            Hlong temp;
-
+            //拆解模板名，得到map映射关系
+            QString template_name = fileInfo.fileName().replace("match-", "").replace(".shm", "");
+            QByteArray trans=template_name.toLatin1();
+            char* split_name=trans.data();
+            bool screw_num_start=false;
+            QString screw_driver_index="";
+            QString screw_index="";
+            for(split_name;*split_name!='\0';split_name++)
+            {
+                if(screw_num_start)
+                {
+                    //螺丝编号
+                    screw_index+=*split_name;
+                }
+                if(*split_name!='_'&&!screw_num_start)
+                {
+                    //批头型号
+                    screw_driver_index+=*split_name;
+                }
+                else
+                {
+                    screw_num_start=true;
+                }
+            }
+            //读取模板
+            Hlong modelID;
             try
             {
-                read_shape_model(qPrintable(fileInfo.filePath()), &temp);
+                read_shape_model(qPrintable(fileInfo.filePath()), &modelID);
             }
             catch (HException &except)
             {
@@ -165,7 +189,7 @@ int MainWindow::hal_read_shape_model()
                 return -2;
             }
             //第几张map中的第几个位置，对应批头号和螺丝号
-            m_ModelID[img_num] = temp;
+            (m_ModelID[screw_driver_index.toInt()])[screw_index.toInt()] = modelID;
         }
         else
         {
@@ -382,8 +406,12 @@ void MainWindow::slot_read_data(float screwdriver, float screw, float enable, fl
         return;//接收完成拍照位置0
     }
     //判断模板是否存在
-    int model_index=screwdriver;
-    if (m_ModelID.find(m_model_index[model_index]) == m_ModelID.end())
+    int screwdriver_index=screwdriver;
+
+    int screw_index=screw;
+    //判断两张map是否都存在映射关系
+    if ( m_ModelID.find(screwdriver_index)==m_ModelID.end() ||\
+         (m_ModelID[screwdriver_index]).find(screw_index)==(m_ModelID[screwdriver_index]).end())
     {
         ui->textBrowser->append("the template is unexisted!\n");
         return;
@@ -402,7 +430,7 @@ void MainWindow::slot_read_data(float screwdriver, float screw, float enable, fl
     double offset_y = 0.0;
 
     int err = 0;
-    err = image_process(m_image, m_ModelID[m_model_index[model_index]],pix_x,pix_y);
+    err = image_process(m_image, (m_ModelID[screwdriver_index])[screw_index],pix_x,pix_y);
     if(0 != err)
     {
         HTuple px = 0.0;
