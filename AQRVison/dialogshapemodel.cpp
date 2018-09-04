@@ -14,6 +14,13 @@ DialogShapeModel::DialogShapeModel(QWidget *parent) :
     //设置界面图标
     setWindowIcon(QIcon(":home.png"));
     ui->setupUi(this);
+    ui->pushButtonCreateShapeModel->setEnabled(false);
+    //设置路径选择窗口
+    fileDialog=new QFileDialog(this);
+    //define fileDialog title
+    fileDialog->setWindowTitle(tr("保存图片"));
+    //set default path
+    fileDialog->setDirectory("./");
     //初始化参数变量配置
     start_param_init();
     //初始化界面设置
@@ -34,6 +41,8 @@ DialogShapeModel::DialogShapeModel(QWidget *parent) :
 
 DialogShapeModel::~DialogShapeModel()
 {
+    delete fileDialog;
+    fileDialog=nullptr;
     //触发标志复位
     first_trigger=true;
     //回收线程
@@ -119,7 +128,7 @@ int DialogShapeModel::start_param_init()
     return 0;
 }
 
-//连续采图
+//按钮：连续采图
 void DialogShapeModel::on_pushButtonPicContinue_clicked()
 {
     //首次触发线程
@@ -151,7 +160,7 @@ void DialogShapeModel::slot_transmit_image(Hobject image)
     disp_obj(image,m_win_id);
 }
 
-//单帧采图
+//按钮：单帧采图
 void DialogShapeModel::on_pushButtonSnapOne_clicked()
 {
     if(0!=p_cam->snap(0))
@@ -170,16 +179,36 @@ void DialogShapeModel::on_pushButtonSnapOne_clicked()
     disp_obj(m_image,m_win_id);
 }
 
-//===========加载图片
+//按钮：保存图片
+void DialogShapeModel::on_pushButtonSaveOne_clicked()
+{
+    QString filename=fileDialog->getSaveFileName(this,tr("Image name"),"",tr("Image(*.bmp)"));
+    if(filename.isEmpty())
+    {
+        print_qmess(QString("请选择命名"));
+        return;
+    }
+    QByteArray trans=filename.toLatin1();
+    try
+    {
+        write_image(m_image, "bmp", 0, trans.data());
+    }
+    catch (HException &except)
+    {
+        cerr<<except.err;
+        m_log.write_log("DialogShapeModel::on_pushButtonSaveOne_clicked(): write image1 failed!");
+        return;
+    }
+}
+
+//按钮：加载图片
 int DialogShapeModel::ClickButtonPicOne()
 {
     QFile file;
     QString fileName;
     char*  ch;
     fileName = QFileDialog::getOpenFileName(this,
-        tr("Open Config"), "", tr("Image Files (*.bmp)"));
-    //tr("Image Files (*.png);;Image Files (*.bmp);;Image Files (*.jpg);"));
-    //(*.png,*bmp,*jpg)
+        tr("Open Config"), "", tr("Image Files (*.png *bmp *jpg)"));
     if (fileName.isEmpty())
     {
         return -1;
@@ -217,7 +246,7 @@ void DialogShapeModel::on_combo_Type_activated(int index)
 }
 
 
-//关系确定后命名
+//关系确定后命名并创建模板
 void DialogShapeModel::on_pushButton_confirm_clicked()
 {
     //判断是否选择螺丝及模板对应关系
@@ -234,9 +263,11 @@ void DialogShapeModel::on_pushButton_confirm_clicked()
 
     //开始绘画模板
     draw_show();
+    //完成创建后保存按钮使能
+    ui->pushButtonCreateShapeModel->setEnabled(true);
 }
 
-//创建模板
+//保存模板
 int DialogShapeModel::ClickButtonCreateShapeModel()
 {
     //判断是否已经为模板命名

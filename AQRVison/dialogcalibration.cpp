@@ -1,5 +1,5 @@
 ﻿#include "dialogcalibration.h"
-#include "ui_dialog.h"
+#include "ui_dialogcalibration.h"
 
 ////界面构造及内部参数初始化
 Dialog::Dialog(QWidget *parent) :
@@ -23,12 +23,11 @@ Dialog::~Dialog()
 void Dialog::closeEvent(QCloseEvent * event )
 {
     switch( QMessageBox::information( this, tr("CT Control View"),
-     tr("Do you really want to log out CT Control View?"),
+     tr("Do you really want to log out calibration View?"),
      tr("Yes"), tr("No"),
      0, 1 ) )
     {
        case 0:
-           //m_cam.exit();
            event->accept();
            break;
        case 1:

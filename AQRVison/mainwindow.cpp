@@ -20,7 +20,6 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
     //初始化参数变量配置   
     start_varia_init();
-    std::memset(m_model_index,0,sizeof(int)*30);
     //初始化界面设置
     start_ui_init();
     //Pushbutton connection
@@ -109,6 +108,10 @@ int MainWindow::start_ui_init()
                                     color: rgb(0,0,0);border-radius:10px;");
     ui->pushButton_Connect->setStyleSheet("background-color:rgb(235,235,235);\
                                     color: rgb(0,0,0);border-radius:10px;");
+    ui->pushButton_SaveRaw->setStyleSheet("background-color:rgb(235,235,235);\
+                                    color: rgb(0,0,0);border-radius:10px;");
+    ui->pushButton_SaveResult->setStyleSheet("background-color:rgb(235,235,235);\
+                                    color: rgb(0,0,0);border-radius:10px;");
     //Widget WinId传递
     HWND hWnd = (HWND)ui->widget->winId();
     int widgetHeight = ui->widget->height();
@@ -122,6 +125,8 @@ int MainWindow::start_ui_init()
 //将已存在的模板导出到map中，保存过程中将模板名的数字作为Map item，则要求模板命名对应编号
 int MainWindow::hal_read_shape_model()
 {
+    //先加载模板对应关系
+
     //读取文件夹
     QDir dir(m_path_exe + "/match/");
     dir.setFilter(QDir::Files | QDir::NoSymLinks);
@@ -159,7 +164,7 @@ int MainWindow::hal_read_shape_model()
                 m_log.write_log("MainWindow::hal_read_shape_model(): read_shape_model error!");
                 return -2;
             }
-            //模板名数字作为index
+            //第几张map中的第几个位置，对应批头号和螺丝号
             m_ModelID[img_num] = temp;
         }
         else
@@ -197,7 +202,6 @@ int MainWindow::image_show(Hobject& Image,HTuple& findRow,HTuple& findCol,bool b
         set_color(m_win_id,"red");
         set_display_font (m_win_id, 200, "mono", "true", "false");
 
-        //QString strQ = QString::fromLocal8Bit("没发现匹配");
         QString strQ("没发现匹配");
         QByteArray ba = strQ.toLocal8Bit();
         char* ch = ba.data();
@@ -263,7 +267,7 @@ void MainWindow::on_pushButton_Start_clicked()
         DialogShapeModel::print_qmess(QString("Please connect to server!"));
         return;
     }
-    emit signal_setupDeviceData(NULL,NULL,0,NULL,NULL);
+    emit signal_setupDeviceData(NULL,NULL,0,NULL,NULL);//开始时先将拍照完成标志置0
 
     //加载模板
     hal_read_shape_model();
@@ -308,6 +312,34 @@ void MainWindow::on_pushButton_Start_clicked()
     return ;
 }
 
+//按钮：保存原图使能
+void MainWindow::on_pushButton_SaveRaw_clicked()
+{
+    m_SaveRaw=!m_SaveRaw;
+    if(m_SaveRaw)
+    {
+        ui->pushButton_SaveRaw->setText("取消");
+    }
+    else
+    {
+        ui->pushButton_SaveRaw->setText("保存原图");
+    }
+}
+
+//按钮：保存结果图使能
+void MainWindow::on_pushButton_SaveResult_clicked()
+{
+    m_SaveResult=!m_SaveResult;
+    if(m_SaveResult)
+    {
+        ui->pushButton_SaveResult->setText("取消");
+    }
+    else
+    {
+        ui->pushButton_SaveResult->setText("保存结果");
+    }
+}
+
 //按钮：测试
 void MainWindow::on_pushButton_TestItem_clicked()
 {
@@ -345,7 +377,10 @@ void MainWindow::slot_read_data(float screwdriver, float screw, float enable, fl
     if(0.0==enable)
         return;//拍照禁止
     if(1.0==receive)
+    {
         emit signal_setupDeviceData(NULL,NULL,0,NULL,NULL);
+        return;//接收完成拍照位置0
+    }
     //判断模板是否存在
     int model_index=screwdriver;
     if (m_ModelID.find(m_model_index[model_index]) == m_ModelID.end())
@@ -391,115 +426,15 @@ void MainWindow::slot_read_data(float screwdriver, float screw, float enable, fl
     x_coor=offset_x;
     y_coor=offset_y;
     emit signal_setupDeviceData(x_coor,y_coor,1.0,NULL,NULL);
-}
-
-//Tcpip
-int MainWindow::tcp_init()
-{
-    //tcp parameters
-    QString ip = "";
-    int port = 0;
-    m_ini.read("TcpIp", "ip", ip);
-    m_ini.read("TcpIp", "port", port);
-
-    if (0!=m_tcpip_client.init(ip, (uint&)port,&protocol_analysis))
-    {     
-        ui->textBrowser->append("tcpip初始化设置失败！");
-        m_log.write_log("MainWindow::tcp_init(): connect error!");
-        return -2;
-    }
-    //tcp_ip connection
-    connect(&m_tcpip_client,SIGNAL(tcpip_cli_signal(QString)),this,SLOT(m_tcpip_slot(QString)));
-
-    ui->textBrowser->append("connect succeed");
-
-    return 0;
-}
-
-//协议解析函数，解析接收的字符
-int MainWindow::protocol_analysis(QString mes, QString& data)
-{
-    if(Runtime)
-    {
-        QString key("snap-\\d+");
-        QRegExp filter(key);
-        if(filter.exactMatch(mes))
-        {
-            data=mes.replace("snap-","");
-            return 0;
-        }
-    }
-    return -1;
-}
-
-//tcpip模块触发槽函数，连接至tcp信息接收信号（Qt机制发送）
-int MainWindow::m_tcpip_slot(QString mes)
-{
-    int m_template_num=mes.toInt();
-    qDebug()<<m_template_num;
-    if (m_ModelID.find(m_model_index[m_template_num]) == m_ModelID.end())
-    {
-        ui->textBrowser->append("the template is unexisted!!!\n");
-        return -1;
-    }
-
-    ui->textBrowser->append("be snapping...\n");
-
-    //开始处理
-    m_snap_cam.snap(0);
-    gen_image1(&m_image,"byte",m_snap_cam.m_cam_width,m_snap_cam.m_cam_height,(Hlong)m_snap_cam.pImageBuffer[0]);
-
-    //image process
-    double pix_x = 0.0;
-    double pix_y = 0.0;
-    double offset_x = 0.0;
-    double offset_y = 0.0;
-
-    int err = 0;
-    err = image_process(m_image, m_ModelID[m_model_index[m_template_num]],pix_x,pix_y);
-    if(0 != err)
-    {
-        HTuple px = 0.0;
-        HTuple py = 0.0;
-        image_show(m_image,py,px,false);
-        ui->textBrowser->append("图像处理失败!!\n");
-        return -2;
-    }
-
-    err = cal_offset(pix_x,pix_y,offset_x,offset_y);
-    if(0 != err)
-    {
-        HTuple px = 0.0;
-        HTuple py = 0.0;
-        image_show(m_image,py,px,false);
-        ui->textBrowser->append("cal_offset失败!!\n");
-        return -3;
-    }
-    //PLC--->PC接收数据格式:SNAP-MODEL1 (对应不同的螺丝种类，需要调用不同的模板)
-    //PC--->PLC发送数据格式:PLC-OFFSET-X-40.50-Y-30.50
-    //视觉反馈：基于校正后基准点的偏移量
-    QString res = "PLC-OFFSET-X-" + QString::number(offset_x, 10, 2);
-    res += "-Y-" + QString::number(offset_y, 10, 2);
-    if (-1 == m_tcpip_client.write(res.toLocal8Bit()))
-    {
-        HTuple px = 0.0;
-        HTuple py = 0.0;
-        image_show(m_image,py,px,true);
-        ui->textBrowser->append("tcpip信息发送失败!!\n");
-        m_log.write_log("MainWindow::m_tcpip_slot(): tcpip write error!");
-        return -4;
-    }
 
     //显示当前图片
     HTuple px = HTuple(pix_x);
     HTuple py = HTuple(pix_y);
     image_show(m_image,py,px,true);
-//    //保存原图及处理后截图，后期取消
-//    image_save(m_image,true,true);
-//    //写入时间及坐标
-//    m_data_file_csv.data_write(pix_x,pix_y);
-
-    return 0;
+    //图像-原图保存-处理后截图保存
+    image_save(m_image,m_SaveRaw,m_SaveResult);
+    //写入时间及坐标,是否需要等待评估
+    m_data_file_csv.data_write(pix_x,pix_y);
 }
 
 //图像处理

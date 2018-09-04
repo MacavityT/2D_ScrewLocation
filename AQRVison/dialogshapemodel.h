@@ -7,6 +7,7 @@
 #include <QMessageBox>
 #include <QCloseEvent>
 #include <QThread>
+#include <QFileDialog>
 
 #include "cpp/HalconCpp.h"
 #include "halfunc.h"
@@ -66,6 +67,8 @@ private slots:
 
     void on_pushButtonPicContinue_clicked();
 
+    void on_pushButtonSaveOne_clicked();
+
 private:
     Ui::DialogShapeModel *ui;
 
@@ -95,7 +98,8 @@ private:
     QThread m_thread;
     basler_cam* p_cam;
     MyThreads m_image_capture;
-
+    //路径选择
+    QFileDialog *fileDialog;
     //log打印
     aqlog m_log;
     //保存模板对应信息

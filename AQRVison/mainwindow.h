@@ -22,7 +22,6 @@
 #include "aqdata.h"
 #include "aqlog.h"
 #include "inifile.h"
-#include "tcpip.h"
 #include "modbus_tcp_server.h"
 #include "mythreads.h"
 
@@ -85,6 +84,8 @@ public:
     IniFile m_ini;
     struct cal_data m_cal_data;
     //图片保存
+    bool m_SaveRaw=false;
+    bool m_SaveResult=false;
     int image_save(Hobject& Image, bool bIsSaveRaw,bool bIsSaveResult);
     //报错管理
     aqlog m_log;
@@ -93,9 +94,6 @@ public:
     QThread m_thread_heartbeat;
     MyThreads  m_heartbeat;
     modbus_tcp_server m_modbus;
-    TcpIp_client m_tcpip_client;
-    int tcp_init();
-    static int protocol_analysis(QString mes, QString& data);
     //Hal obj
     Hlong m_win_id;
     Hobject m_image;
@@ -107,8 +105,9 @@ public:
     //Hal param
 
     //模板ID：不存在的模板设置为-1
-    map<int, Hlong> m_ModelID;
-    int m_model_index[30];
+    map<int, map<int, Hlong>> m_ModelID;
+    int m_model_type;
+    int m_model_index;
 
     QString m_path_exe;
 
@@ -123,8 +122,6 @@ signals:
     void signal_heartbeat_sender_control(modbus_tcp_server*);//控制线程发出心跳信号，由modbus类接收并setdata
 
 public slots:
-    //tcpip函数
-    int m_tcpip_slot(QString mes);
     //接收modbus tcp传送的数据
     void slot_read_data(float screwdriver,float screw,\
                         float enable,float receive,float reserve);
@@ -144,6 +141,10 @@ private slots:
     void on_pushButton_Start_clicked();
 
     void on_pushButton_Stop_clicked();
+
+    void on_pushButton_SaveRaw_clicked();
+
+    void on_pushButton_SaveResult_clicked();
 };
 
 /*

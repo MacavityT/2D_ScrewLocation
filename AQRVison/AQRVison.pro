@@ -23,7 +23,6 @@ SOURCES += main.cpp\
     aqdata.cpp \
     aqlog.cpp \
     inifile.cpp \
-    tcpip.cpp \
     modbus_tcp_server.cpp \
     mythreads.cpp \
     dialogcalibration.cpp
@@ -35,14 +34,13 @@ HEADERS  += mainwindow.h \
     aqdata.h \
     aqlog.h \
     inifile.h \
-    tcpip.h \
     modbus_tcp_server.h \
     mythreads.h \
     dialogcalibration.h
 
 FORMS    += mainwindow.ui \
-            dialog.ui \
-            dialogshapemodel.ui
+            dialogshapemodel.ui \
+    dialogcalibration.ui
 
 INCLUDEPATH += "D:/Program Files/MVTec/HALCON-13.0/include/"
 

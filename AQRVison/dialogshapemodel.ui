@@ -23,15 +23,15 @@
     <rect>
      <x>20</x>
      <y>10</y>
-     <width>741</width>
-     <height>481</height>
+     <width>640</width>
+     <height>480</height>
     </rect>
    </property>
   </widget>
   <widget class="QPushButton" name="pushButtonSnapOne">
    <property name="geometry">
     <rect>
-     <x>900</x>
+     <x>860</x>
      <y>20</y>
      <width>111</width>
      <height>61</height>
@@ -47,7 +47,7 @@
   <widget class="QPushButton" name="pushButtonPicOne">
    <property name="geometry">
     <rect>
-     <x>770</x>
+     <x>860</x>
      <y>100</y>
      <width>111</width>
      <height>61</height>
@@ -63,7 +63,7 @@
   <widget class="QLabel" name="label">
    <property name="geometry">
     <rect>
-     <x>770</x>
+     <x>730</x>
      <y>250</y>
      <width>231</width>
      <height>31</height>
@@ -79,7 +79,7 @@
    </property>
    <property name="geometry">
     <rect>
-     <x>770</x>
+     <x>730</x>
      <y>281</y>
      <width>241</width>
      <height>171</height>
@@ -92,7 +92,7 @@
    </property>
    <property name="geometry">
     <rect>
-     <x>770</x>
+     <x>730</x>
      <y>470</y>
      <width>93</width>
      <height>28</height>
@@ -105,7 +105,7 @@
   <widget class="QPushButton" name="pushButton_2">
    <property name="geometry">
     <rect>
-     <x>920</x>
+     <x>880</x>
      <y>470</y>
      <width>93</width>
      <height>28</height>
@@ -172,7 +172,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>确定</string>
+     <string>创建模板</string>
     </property>
    </widget>
    <widget class="QComboBox" name="combo_ShangStd">
@@ -353,14 +353,14 @@
      </rect>
     </property>
     <property name="text">
-     <string>创建模板</string>
+     <string>保存模板</string>
     </property>
    </widget>
   </widget>
   <widget class="QPushButton" name="pushButtonSaveOne">
    <property name="geometry">
     <rect>
-     <x>900</x>
+     <x>730</x>
      <y>100</y>
      <width>111</width>
      <height>61</height>
@@ -376,7 +376,7 @@
   <widget class="QPushButton" name="pushButtonPicContinue">
    <property name="geometry">
     <rect>
-     <x>770</x>
+     <x>730</x>
      <y>20</y>
      <width>111</width>
      <height>61</height>

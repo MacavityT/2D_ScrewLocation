@@ -176,6 +176,46 @@
      <string>连接</string>
     </property>
    </widget>
+   <widget class="QPushButton" name="pushButton_SaveRaw">
+    <property name="geometry">
+     <rect>
+      <x>790</x>
+      <y>230</y>
+      <width>81</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Aharoni</family>
+      <weight>75</weight>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>保存原图</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="pushButton_SaveResult">
+    <property name="geometry">
+     <rect>
+      <x>900</x>
+      <y>230</y>
+      <width>81</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Aharoni</family>
+      <weight>75</weight>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>保存结果</string>
+    </property>
+   </widget>
    <zorder>widget</zorder>
    <zorder>pushButton_Stop</zorder>
    <zorder>pushButton_Start</zorder>
@@ -183,6 +223,8 @@
    <zorder>textBrowser</zorder>
    <zorder>pushButton_TestItem</zorder>
    <zorder>pushButton_Connect</zorder>
+   <zorder>pushButton_SaveRaw</zorder>
+   <zorder>pushButton_SaveResult</zorder>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
@@ -213,7 +255,7 @@
      </font>
     </property>
     <property name="title">
-     <string>系统</string>
+     <string>设置界面</string>
     </property>
     <addaction name="actionParam"/>
     <addaction name="actionShapeModel"/>
@@ -242,7 +284,7 @@
   <widget class="QStatusBar" name="statusBar"/>
   <action name="actionParam">
    <property name="text">
-    <string>Param</string>
+    <string>Calibration</string>
    </property>
    <property name="font">
     <font/>
