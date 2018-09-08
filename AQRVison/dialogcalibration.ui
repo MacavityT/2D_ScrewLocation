@@ -18,8 +18,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>641</width>
-     <height>421</height>
+     <width>640</width>
+     <height>480</height>
     </rect>
    </property>
   </widget>
@@ -65,10 +65,10 @@
   <widget class="QGroupBox" name="groupBox">
    <property name="geometry">
     <rect>
-     <x>10</x>
-     <y>430</y>
-     <width>301</width>
-     <height>161</height>
+     <x>0</x>
+     <y>500</y>
+     <width>991</width>
+     <height>71</height>
     </rect>
    </property>
    <property name="title">
@@ -77,21 +77,25 @@
    <widget class="QPushButton" name="pushButton_StdW">
     <property name="geometry">
      <rect>
-      <x>30</x>
-      <y>70</y>
+      <x>350</x>
+      <y>30</y>
       <width>80</width>
       <height>30</height>
      </rect>
     </property>
+    <property name="styleSheet">
+     <string notr="true">background-color:rgb(225,225,225);
+border-radius:10px;</string>
+    </property>
     <property name="text">
-     <string>物理位置</string>
+     <string>拍照位置</string>
     </property>
    </widget>
    <widget class="QTextEdit" name="textEdit_wStdx">
     <property name="geometry">
      <rect>
-      <x>120</x>
-      <y>70</y>
+      <x>440</x>
+      <y>30</y>
       <width>81</width>
       <height>31</height>
      </rect>
@@ -100,8 +104,8 @@
    <widget class="QTextEdit" name="textEdit_wStdy">
     <property name="geometry">
      <rect>
-      <x>210</x>
-      <y>70</y>
+      <x>530</x>
+      <y>30</y>
       <width>81</width>
       <height>31</height>
      </rect>
@@ -136,15 +140,19 @@
       <height>30</height>
      </rect>
     </property>
+    <property name="styleSheet">
+     <string notr="true">background-color:rgb(225,225,225);
+border-radius:10px;</string>
+    </property>
     <property name="text">
-     <string>螺丝位置</string>
+     <string>作业位置</string>
     </property>
    </widget>
    <widget class="QTextEdit" name="textEdit_pStdy">
     <property name="geometry">
      <rect>
-      <x>210</x>
-      <y>110</y>
+      <x>840</x>
+      <y>30</y>
       <width>81</width>
       <height>31</height>
      </rect>
@@ -153,8 +161,8 @@
    <widget class="QTextEdit" name="textEdit_pStdx">
     <property name="geometry">
      <rect>
-      <x>120</x>
-      <y>110</y>
+      <x>750</x>
+      <y>30</y>
       <width>81</width>
       <height>31</height>
      </rect>
@@ -166,11 +174,15 @@
     </property>
     <property name="geometry">
      <rect>
-      <x>30</x>
-      <y>110</y>
+      <x>660</x>
+      <y>30</y>
       <width>80</width>
       <height>30</height>
      </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color:rgb(225,225,225);
+border-radius:10px;</string>
     </property>
     <property name="text">
      <string>图像位置</string>
@@ -181,7 +193,7 @@
    <property name="geometry">
     <rect>
      <x>650</x>
-     <y>90</y>
+     <y>70</y>
      <width>181</width>
      <height>151</height>
     </rect>
@@ -199,7 +211,8 @@
      </rect>
     </property>
     <property name="styleSheet">
-     <string notr="true">font: 75 8pt &quot;Aharoni&quot;;</string>
+     <string notr="true">background-color:rgb(225,225,225);
+border-radius:10px;font: 75 8pt &quot;Aharoni&quot;;</string>
     </property>
     <property name="text">
      <string>获取物理位置</string>
@@ -235,7 +248,8 @@
      </rect>
     </property>
     <property name="styleSheet">
-     <string notr="true">font: 75 8pt &quot;Aharoni&quot;;</string>
+     <string notr="true">background-color:rgb(225,225,225);
+border-radius:10px;font: 75 8pt &quot;Aharoni&quot;;</string>
     </property>
     <property name="text">
      <string>获取图像位置</string>
@@ -266,7 +280,7 @@
    <property name="geometry">
     <rect>
      <x>830</x>
-     <y>90</y>
+     <y>70</y>
      <width>181</width>
      <height>151</height>
     </rect>
@@ -284,7 +298,8 @@
      </rect>
     </property>
     <property name="styleSheet">
-     <string notr="true">font: 75 8pt &quot;Aharoni&quot;;</string>
+     <string notr="true">background-color:rgb(225,225,225);
+border-radius:10px;font: 75 8pt &quot;Aharoni&quot;;</string>
     </property>
     <property name="text">
      <string>获取物理位置</string>
@@ -320,7 +335,8 @@
      </rect>
     </property>
     <property name="styleSheet">
-     <string notr="true">font: 75 8pt &quot;Aharoni&quot;;</string>
+     <string notr="true">background-color:rgb(225,225,225);
+border-radius:10px;font: 75 8pt &quot;Aharoni&quot;;</string>
     </property>
     <property name="text">
      <string>获取图像位置</string>
@@ -351,7 +367,7 @@
    <property name="geometry">
     <rect>
      <x>650</x>
-     <y>270</y>
+     <y>250</y>
      <width>181</width>
      <height>151</height>
     </rect>
@@ -369,7 +385,8 @@
      </rect>
     </property>
     <property name="styleSheet">
-     <string notr="true">font: 75 8pt &quot;Aharoni&quot;;</string>
+     <string notr="true">background-color:rgb(225,225,225);
+border-radius:10px;font: 75 8pt &quot;Aharoni&quot;;</string>
     </property>
     <property name="text">
      <string>获取物理位置</string>
@@ -405,7 +422,8 @@
      </rect>
     </property>
     <property name="styleSheet">
-     <string notr="true">font: 75 8pt &quot;Aharoni&quot;;</string>
+     <string notr="true">background-color:rgb(225,225,225);
+border-radius:10px;font: 75 8pt &quot;Aharoni&quot;;</string>
     </property>
     <property name="text">
      <string>获取图像位置</string>
@@ -436,7 +454,7 @@
    <property name="geometry">
     <rect>
      <x>830</x>
-     <y>270</y>
+     <y>250</y>
      <width>181</width>
      <height>151</height>
     </rect>
@@ -454,7 +472,8 @@
      </rect>
     </property>
     <property name="styleSheet">
-     <string notr="true">font: 75 8pt &quot;Aharoni&quot;;</string>
+     <string notr="true">background-color:rgb(225,225,225);
+border-radius:10px;font: 75 8pt &quot;Aharoni&quot;;</string>
     </property>
     <property name="text">
      <string>获取物理位置</string>
@@ -490,7 +509,8 @@
      </rect>
     </property>
     <property name="styleSheet">
-     <string notr="true">font: 75 8pt &quot;Aharoni&quot;;</string>
+     <string notr="true">background-color:rgb(225,225,225);
+border-radius:10px;font: 75 8pt &quot;Aharoni&quot;;</string>
     </property>
     <property name="text">
      <string>获取图像位置</string>
@@ -521,9 +541,9 @@
    <property name="geometry">
     <rect>
      <x>650</x>
-     <y>440</y>
+     <y>410</y>
      <width>361</width>
-     <height>101</height>
+     <height>71</height>
     </rect>
    </property>
   </widget>

@@ -41,8 +41,6 @@ public:
     int cam_init(basler_cam* ptr_cam);
     //QMessage打印
     static void print_qmess(QString& content);
-    //测试
-    void test();
 signals:
     void signal_image_capture();//触发采集线程
 public slots:
@@ -69,6 +67,14 @@ private slots:
 
     void on_pushButtonSaveOne_clicked();
 
+    void on_pushButton_Test_clicked();
+
+    void on_pushButtonDetectRegion_clicked();
+
+    void on_pushButtonShowRegion_clicked();
+
+    void on_combo_Score_activated(const QString &arg1);
+
 private:
     Ui::DialogShapeModel *ui;
 
@@ -77,12 +83,12 @@ private:
     Hlong m_win_id,image_width,image_height;
     double m_create_row,m_create_col,m_create_radius;
 
-    QString m_path_exe;
-
     //创建模板所使用字段
     Hobject cpy_image, m_modelRegion, m_templateImage, m_ModelContours, m_TransContours;
     HTuple m_row, m_col, m_angle, m_score;
     HTuple  hv_RefColumn, hv_HomMat2D, hv_RefRow, hv_ModelRegionArea;
+    //准心区域
+    Hobject m_detect_region;
     //螺丝编号对应模板编号
     int screw_num=0;
     int screw_type=0;
@@ -98,7 +104,10 @@ private:
     QThread m_thread;
     basler_cam* p_cam;
     MyThreads m_image_capture;
+    //检测区域显示标志位
+    bool detection_region_show=false;
     //路径选择
+    QString m_path_exe;
     QFileDialog *fileDialog;
     //log打印
     aqlog m_log;

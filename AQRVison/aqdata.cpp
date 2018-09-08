@@ -52,8 +52,10 @@ AQData::~AQData()
     delete m_file;
 }
 
-int AQData::data_write(double x, double y)
+int AQData::data_write(double x, double y, bool enable)
 {
+    if(!enable)
+        return 0;
     //匹配到模板，保存data
     QString content = QDateTime::currentDateTime().toString("yyyy.MM.dd hh:mm:ss:zzz") + ",";
     content += QString::number(x, 10,2) + ",";

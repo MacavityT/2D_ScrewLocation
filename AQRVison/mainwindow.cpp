@@ -14,8 +14,6 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
-    //支持中文
-//    QTextCodec::setCodecForLocale(QTextCodec::codecForName("utf-8"));
     //注册类型
     qRegisterMetaType<modbus_tcp_server>("modbus_tcp_server");
     qRegisterMetaType<Hobject>("Hobject");
@@ -113,6 +111,10 @@ int MainWindow::start_ui_init()
                                     color: rgb(0,0,0);border-radius:10px;");
     ui->pushButton_SaveResult->setStyleSheet("background-color:rgb(235,235,235);\
                                     color: rgb(0,0,0);border-radius:10px;");
+    ui->pushButton_SaveCoordinate->setStyleSheet("background-color:rgb(235,235,235);\
+                                    color: rgb(0,0,0);border-radius:10px;");
+    ui->pushButton_ChangeLink->setStyleSheet("background-color:rgb(235,235,235);\
+                                               color: rgb(0,0,0);border-radius:10px;");
     //Widget WinId传递
     HWND hWnd = (HWND)ui->widget->winId();
     int widgetHeight = ui->widget->height();
@@ -126,8 +128,6 @@ int MainWindow::start_ui_init()
 //将已存在的模板导出到map中，保存过程中将模板名的数字作为Map item，则要求模板命名对应编号
 int MainWindow::hal_read_shape_model()
 {
-    //先加载模板对应关系
-
     //读取文件夹
     QDir dir(m_path_exe + "/match/");
     dir.setFilter(QDir::Files | QDir::NoSymLinks);
@@ -336,6 +336,18 @@ void MainWindow::on_pushButton_Start_clicked()
     return ;
 }
 
+//按钮：测试
+void MainWindow::on_pushButton_TestItem_clicked()
+{
+    m_setting_dialog.show();
+}
+
+//按钮：连接或断开PLC
+void MainWindow::on_pushButton_Connect_clicked()
+{
+    m_modbus.connection(!connection_status);
+}
+
 //按钮：保存原图使能
 void MainWindow::on_pushButton_SaveRaw_clicked()
 {
@@ -364,16 +376,32 @@ void MainWindow::on_pushButton_SaveResult_clicked()
     }
 }
 
-//按钮：测试
-void MainWindow::on_pushButton_TestItem_clicked()
+//按钮：识别位置使能
+void MainWindow::on_pushButton_SaveCoordinate_clicked()
 {
+    m_SaveData=!m_SaveData;
+    if(m_SaveData)
+    {
+        ui->pushButton_SaveCoordinate->setText("取消");
+    }
+    else
+    {
+        ui->pushButton_SaveCoordinate->setText("保存坐标");
+    }
 }
 
-//按钮：连接或断开PLC
-void MainWindow::on_pushButton_Connect_clicked()
+//按钮：弹出更改连接地址对话框
+void MainWindow::on_pushButton_ChangeLink_clicked()
 {
-    m_modbus.connection(!connection_status);
+    if(m_setting_dialog.exec())
+    {
+        m_modbus.port=m_setting_dialog.port;
+        m_modbus.server_address=m_setting_dialog.server;
+        m_ini.write("TCP_Param","port",m_setting_dialog.port);
+        m_ini.write("TCP_Param","server_address",m_setting_dialog.server);
+    }
 }
+
 
 //////控制流程
 //Modbus TCP
@@ -429,8 +457,18 @@ void MainWindow::slot_read_data(float screwdriver, float screw, float enable, fl
     double offset_x = 0.0;
     double offset_y = 0.0;
 
+
+    double score=0;
+    QString driver_trans,screw_trans;
+    driver_trans.setNum(screwdriver_index);
+    screw_trans.setNum(screw_index);
+    QString key=driver_trans+'_'+screw_trans;
+    m_ini.read("Model_Score",key,score);
+    if(score==0)
+        score=0.5;
+
     int err = 0;
-    err = image_process(m_image, (m_ModelID[screwdriver_index])[screw_index],pix_x,pix_y);
+    err = image_process(m_image, (m_ModelID[screwdriver_index])[screw_index],score,pix_x,pix_y);
     if(0 != err)
     {
         HTuple px = 0.0;
@@ -461,18 +499,18 @@ void MainWindow::slot_read_data(float screwdriver, float screw, float enable, fl
     image_show(m_image,py,px,true);
     //图像-原图保存-处理后截图保存
     image_save(m_image,m_SaveRaw,m_SaveResult);
-    //写入时间及坐标,是否需要等待评估
-    m_data_file_csv.data_write(pix_x,pix_y);
+    //写入时间及坐标
+    m_data_file_csv.data_write(pix_x,pix_y,m_SaveData);
 }
 
 //图像处理
-int MainWindow::image_process(Hobject& Image,Hlong model_id,double& pix_x,double& pix_y)
+int MainWindow::image_process(Hobject& Image,Hlong model_id,double score,double& pix_x,double& pix_y)
 {
     HTuple findRow,findCol,findAngle,findScore;
 
     double dradRange = HTuple(360).Rad()[0].D();
-    find_shape_model(Image,  model_id, 0, dradRange , 0.5, 1, 0.5,
-                     "least_squares", 3, 0.9, &findRow, &findCol, &findAngle, &findScore);//修改最大寻找数量
+    find_shape_model(Image,  model_id, 0, dradRange , score, 1, 0.5,
+                     "least_squares", 3, 0.9, &findRow, &findCol, &findAngle, &findScore);
 
     //判断findRow有无
     if(1 != findRow.Num())
@@ -531,7 +569,7 @@ int MainWindow::file_image_to_process()
     //操作文件
     read_image(&m_image, ch);
     double pix_x,pix_y;
-    image_process(m_image,1,pix_x,pix_y);// the second number is the index of models
+    image_process(m_image,1,0.5,pix_x,pix_y);// the second number is the index of models
 
     //关闭文件
     file.close();
@@ -566,7 +604,7 @@ int MainWindow::folder_image_to_process()
         {
             read_image(&m_image,hv_ImageFiles[i].S());
             double pix_x = 0.0,pix_y = 0.0;
-            image_process(m_image,1,pix_x,pix_y);
+            image_process(m_image,1,0.5,pix_x,pix_y);
             //Sleep(500);
         }
 
@@ -687,3 +725,4 @@ int MainWindow::cal_data_ini_read()
 
     return 0;
 }
+

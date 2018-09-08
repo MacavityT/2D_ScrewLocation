@@ -1,4 +1,4 @@
-//module：Data
+﻿//module：Data
 //version:V1.0
 //author:wu wei
 //date:2018-06-06
@@ -19,7 +19,7 @@ public:
      AQData();
     ~AQData();
 
-    int data_write(double x, double y);
+    int data_write(double x, double y, bool enable);
 
 private:
     QFile* m_file;

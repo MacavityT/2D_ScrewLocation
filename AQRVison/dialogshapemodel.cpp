@@ -43,8 +43,6 @@ DialogShapeModel::~DialogShapeModel()
 {
     delete fileDialog;
     fileDialog=nullptr;
-    //触发标志复位
-    first_trigger=true;
     //回收线程
     m_thread.terminate();
     m_thread.wait();
@@ -61,7 +59,11 @@ void DialogShapeModel::closeEvent(QCloseEvent * event )
      0, 1 ) )
     {
        case 0:
-           //m_cam.exit();
+           //触发标志复位
+           first_trigger=true;
+           //连续采集停止
+           if(m_image_capture.m_continue)
+               ui->pushButtonPicContinue->click();
            event->accept();
            break;
        case 1:
@@ -89,6 +91,38 @@ int DialogShapeModel::start_ui_init()
     open_window(0,0,widgetWidth,widgetHeight,m_DlgID,"visible", "",&m_win_id);
 //    set_part(m_win_id,0,0,(*p_cam).m_cam_height,(*p_cam).m_cam_width); 初始化此界面类时，相机类未初始化完成
     set_part(m_win_id,0,0,1944,2592);
+    set_color(m_win_id,"green");
+    set_draw(m_win_id,"margin");
+    set_line_width(m_win_id,3);
+    set_system("clip_region","false");
+
+    //初始化按钮控件样式表
+    auto all_object=this->children();
+    QObjectList::iterator i;
+    for(i=all_object.begin();i!=all_object.end();++i)
+    {
+        QObject* wid=*i;
+        //获取对象类型名
+        QString type_name="";
+        const char* name_ptr=wid->metaObject()->className();
+        for(name_ptr;*name_ptr!='\0';name_ptr++)
+        {
+            type_name+=*name_ptr;
+        }
+        //被操作对象的类型名
+        QString name1="QPushButton";
+        QString name2="QComboBox";
+        if(type_name==name1)
+        {
+            static_cast<QPushButton*>(wid)->setStyleSheet("background-color:rgb(225,225,225);\
+                                                          border-radius:10px;");
+        }
+        else if(type_name==name2)
+        {
+            static_cast<QComboBox*>(wid)->setStyleSheet("background-color:rgb(225,225,225);\
+                                                        border-radius:10px;");
+        }
+    }
 
     return 0;
 }
@@ -96,6 +130,8 @@ int DialogShapeModel::start_ui_init()
 //参数初始化
 int DialogShapeModel::start_param_init()
 {
+    //Image init
+    gen_empty_obj(&m_image);
     //field init
     m_fileName = "";
     index_delete = -1;
@@ -111,7 +147,7 @@ int DialogShapeModel::start_param_init()
     for (int i = 0; i < list.size(); ++i)
     {
         QFileInfo fileInfo = list.at(i);
-        QString pattern("^match-\\d+\\.shm$");
+        QString pattern("^match-\\d+\\_+\\d+\\.shm$");
         QRegExp rx(pattern);
         bool res = rx.exactMatch(fileInfo.fileName());
 
@@ -131,14 +167,17 @@ int DialogShapeModel::start_param_init()
 //按钮：连续采图
 void DialogShapeModel::on_pushButtonPicContinue_clicked()
 {
+    //检测当前状态
+    bool status=ui->pushButtonPicOne->isEnabled();
     //首次触发线程
     if(first_trigger)
     {
+        //线程控制
+        m_image_capture.m_continue=status;
         m_image_capture.param_set(p_cam);
         emit signal_image_capture();
     }
-    //控件使能
-    bool status=ui->pushButtonPicOne->isEnabled();
+    //控件使能    
     foreach (QAbstractButton* button, ui->ViewControl->buttons()) {
         if(button->objectName()!="pushButtonPicContinue")
         {
@@ -146,8 +185,6 @@ void DialogShapeModel::on_pushButtonPicContinue_clicked()
 //            static_cast<QPushButton*>(button)->setEnabled(!status);
         }
     }
-    //线程控制
-    m_image_capture.m_continue=status;
     if(status)
         ui->pushButtonPicContinue->setText(tr("停止采图"));
     else
@@ -158,6 +195,8 @@ void DialogShapeModel::slot_transmit_image(Hobject image)
 {
     //获取并显示图像，由线程不断触发
     disp_obj(image,m_win_id);
+    if(detection_region_show)
+        disp_obj(m_detect_region,m_win_id);
 }
 
 //按钮：单帧采图
@@ -224,6 +263,8 @@ int DialogShapeModel::ClickButtonPicOne()
     {
         std::cerr<<e.err;
     }
+    //Clear window
+    clear_window(m_win_id);
     //Show Image
     get_image_size(m_image,&image_width,&image_height);
     disp_obj(m_image,m_win_id);
@@ -234,6 +275,66 @@ int DialogShapeModel::ClickButtonPicOne()
     return 0;
 }
 
+//按钮：创建检测区域
+void DialogShapeModel::on_pushButtonDetectRegion_clicked()
+{
+    //提示画一个圆圈
+    set_color(m_win_id,"green");
+    set_draw(m_win_id,"margin");
+    set_line_width(m_win_id,3);
+    draw_circle(m_win_id,&m_create_row,&m_create_col,&m_create_radius);
+    disp_circle(m_win_id,m_create_row,m_create_col,m_create_radius);
+    gen_circle(&m_detect_region, m_create_row,m_create_col,m_create_radius);
+    //判断文件夹是否存在，不存在则创建
+    QDir dir(m_path_exe + "/region/");
+    dir.setFilter(QDir::Files | QDir::NoSymLinks);
+    if (false == dir.exists())
+    {
+        bool is_mkdir = dir.mkdir(m_path_exe + "/region/");
+        if (false == is_mkdir)
+        {
+            print_qmess(QString("创建文件夹失败"));
+            clear_window(m_win_id);
+            return;
+        }
+    }
+    //保存区域
+    QString qdstr = m_path_exe + QString("/region/DetectionRegion.hobj");
+    QByteArray ba = qdstr.toLocal8Bit();
+    char* ch = ba.data();
+    try
+    {
+        write_region(m_detect_region,ch);
+    }
+    catch(...)
+    {
+        print_qmess(QString("保存失败"));
+        clear_window(m_win_id);
+        return;
+    }
+    print_qmess(QString("创建成功"));
+}
+
+//选择是否在连续采集中显示准心区域
+void DialogShapeModel::on_pushButtonShowRegion_clicked()
+{
+    QString qdstr = m_path_exe + QString("/region/DetectionRegion.hobj");
+    QByteArray ba = qdstr.toLocal8Bit();
+    char* ch = ba.data();
+    read_region(&m_detect_region,ch);
+    //Set flag
+    detection_region_show=!detection_region_show;
+    if(detection_region_show)
+    {
+        ui->pushButtonShowRegion->setText(QString("取消显示"));
+    }
+    else
+    {
+        ui->pushButtonShowRegion->setText(QString("显示区域"));
+    }
+}
+
+//////模板创建部分
 //选择模版对应关系
 void DialogShapeModel::on_combo_ShangStd_activated(int index)
 {
@@ -245,6 +346,17 @@ void DialogShapeModel::on_combo_Type_activated(int index)
     screw_type=index;
 }
 
+void DialogShapeModel::on_combo_Score_activated(const QString &arg1)
+{
+    if(arg1=="相似度(默认0.5)")
+        return;
+    QString score=arg1;
+    QString screw_index,driver_index;
+    driver_index.setNum(screw_type);
+    screw_index.setNum(screw_num);
+    m_fileName=driver_index+'_'+screw_index;
+    m_ini.write("Model_Score",m_fileName,score);
+}
 
 //关系确定后命名并创建模板
 void DialogShapeModel::on_pushButton_confirm_clicked()
@@ -261,10 +373,9 @@ void DialogShapeModel::on_pushButton_confirm_clicked()
     screw_index.setNum(screw_num);
     m_fileName=driver_index+'_'+screw_index;
 
-    //开始绘画模板
-    draw_show();
-    //完成创建后保存按钮使能
-    ui->pushButtonCreateShapeModel->setEnabled(true);
+    //开始绘画模板,完成创建后保存按钮使能
+    if(0==draw_show())
+        ui->pushButtonCreateShapeModel->setEnabled(true);
 }
 
 //保存模板
@@ -313,7 +424,7 @@ int DialogShapeModel::draw_show()
         return -1;
     }
 
-    //获取模板到image中并提取其中的相关要素
+    //轮廓仿射变换
     get_shape_model_contours (&m_ModelContours, m_ModelID, 1);
     area_center(m_modelRegion, &hv_ModelRegionArea, &hv_RefRow, &hv_RefColumn);
     vector_angle_to_rigid(0, 0, 0, hv_RefRow, hv_RefColumn, 0, &hv_HomMat2D);
@@ -397,20 +508,24 @@ void DialogShapeModel::on_pushButton_delete_clicked()
     }
 }
 
-//=========模板删除模块
+//模板删除模块
 void DialogShapeModel::deleteFile()
 {
     if (index_delete != -1)
     {
         QModelIndex m_index = standardItemModel->index(index_delete, 0);
+        //delete model
         QString del_file_name = m_index.data().toString();
         QFile del_f(m_path_exe + "/match/" + del_file_name);
+        //delete image
+        QString image_name = del_file_name.replace("match-", "").replace(".shm", "");
+        QFile del_m(m_path_exe + QString("/matchImage/" + image_name + ".bmp"));
 
         if (del_f.exists())
-        {
             del_f.remove();
-            print_qmess(QString("delete succeed!"));
-        }
+        if (del_m.exists())
+            del_m.remove();
+        print_qmess(QString("delete succeed!"));
         del_f.close();
 
         QList<QString>::Iterator it = strList.begin(),itend = strList.end();
@@ -424,12 +539,14 @@ void DialogShapeModel::deleteFile()
     }
     index_delete = -1;
     ui->pushButton_delete->setEnabled(false);
+    ui->pushButton_Test->setEnabled(false);
 }
 
 //列表元素激活
 void DialogShapeModel::on_listView_activated(const QModelIndex &index)
 {
     ui->pushButton_delete->setEnabled(true);
+    ui->pushButton_Test->setEnabled(true);
     index_delete = index.row();
 }
 
@@ -487,7 +604,63 @@ void DialogShapeModel::print_qmess(QString &content)
     msg.exec();
 }
 
-//测试
-void DialogShapeModel::test()
+//按钮：测试
+void DialogShapeModel::on_pushButton_Test_clicked()
 {
+    //判断图片是否为空
+    Hlong num;
+    count_obj(m_image,&num);
+    if(0==num)
+    {
+        print_qmess(QString("请添加图片"));
+        return;
+    }
+    //文件路径
+    HTuple test_modelID;
+    QModelIndex m_index = standardItemModel->index(index_delete, 0);
+    QString template_name = m_index.data().toString();
+    QString template_path = m_path_exe+"/match/"+template_name;
+    QByteArray trans=template_path.toLatin1();
+    char* test_model_path=trans.data();
+    //读取模板
+    try
+    {
+        read_shape_model(test_model_path,&test_modelID);
+    }
+    catch(...)
+    {
+        print_qmess(QString("读取模板失败"));
+        return;
+    }
+    //查找模板
+    HTuple findRow,findCol,findAngle,findScore;
+    double dradRange = HTuple(360).Rad()[0].D();
+    try
+    {
+        find_shape_model(m_image,  test_modelID, 0, dradRange , 0.5, 1, 0.5,
+                         "least_squares", 3, 0.9, &findRow, &findCol, &findAngle, &findScore);
+    }
+    catch(...)
+    {
+        print_qmess(QString("匹配失败"));
+        return;
+    }
+    if(findRow.Num()!=1)
+    {
+        print_qmess(QString("匹配失败"));
+        return;
+    }
+
+    //结果显示
+    Hobject Contours;
+    HTuple hom_mat_2d;
+    //轮廓仿射变换
+    get_shape_model_contours (&Contours, test_modelID, 1);
+    vector_angle_to_rigid(0, 0, 0, findRow, findCol, findAngle, &hom_mat_2d);
+    affine_trans_contour_xld(Contours, &Contours, hom_mat_2d);
+    //显示模板轮廓
+    set_color(m_win_id, "green");
+    set_draw(m_win_id, "margin");
+    disp_obj(m_image, m_win_id);
+    disp_obj(Contours, m_win_id);
 }

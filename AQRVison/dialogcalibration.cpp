@@ -9,7 +9,28 @@ Dialog::Dialog(QWidget *parent) :
     //设置界面图标
     setWindowIcon(QIcon(":home.png"));
     ui->setupUi(this);
-
+    //初始化按钮控件样式表
+    auto all_object=this->children();
+    QObjectList::iterator i;
+    for(i=all_object.begin();i!=all_object.end();++i)
+    {
+        QObject* wid=*i;
+        //获取对象类型名
+        QString type_name="";
+        const char* name_ptr=wid->metaObject()->className();
+        for(name_ptr;*name_ptr!='\0';name_ptr++)
+        {
+            type_name+=*name_ptr;
+        }
+        //被操作对象的类型名
+        QString name1="QPushButton";
+        if(type_name==name1)
+        {
+            static_cast<QPushButton*>(wid)->setStyleSheet("background-color:rgb(225,225,225);\
+                                                          border-radius:10px;");
+        }
+    }
+    //Halocn窗体初始化
     hal_init();
     m_path_exe = QCoreApplication::applicationDirPath();
 }
@@ -46,6 +67,10 @@ int Dialog::hal_init()
     int widgetWidth  = ui->widget->width();
     Hlong m_DlgID = (Hlong)hWnd;
     open_window(0,0,widgetWidth,widgetHeight,m_DlgID,"visible", "",&m_win_id);
+    set_part(m_win_id,0,0,1944,2592);
+    set_color(m_win_id,"green");
+    set_draw(m_win_id,"margin");
+    set_line_width(m_win_id,3);
 
     return 0;
 }
@@ -95,6 +120,8 @@ void Dialog::on_pushButtonPicOne_clicked()
 
     //操作文件
     read_image(&m_image,ch);
+    //Clear window
+    clear_window(m_win_id);
     //Show Image
     Hlong part_image_width = 0;
     Hlong part_image_height = 0;
@@ -142,12 +169,6 @@ void Dialog::on_pushButton1_stdp_clicked()
 {
     //获取图像点
     double row = 0.0,col = 0.0,radius =0.0;
-
-    QMessageBox msgBox;
-    msgBox.setWindowTitle("提示");
-    msgBox.setText("请在图像上画出圆！！");
-    msgBox.exec();
-
     draw_circle(m_win_id,&row,&col,&radius);
     //image -- 对应model ，涉及 须Process_image做成class
     //ui 交互
@@ -160,12 +181,6 @@ void Dialog::on_pushButton2_stdp_clicked()
 {
     //获取图像点
     double row = 0.0,col = 0.0,radius =0.0;
-
-    QMessageBox msgBox;
-    msgBox.setWindowTitle("提示");
-    msgBox.setText("请在图像上画出圆！！");
-    msgBox.exec();
-
     draw_circle(m_win_id,&row,&col,&radius);
     //image -- 对应model ，涉及 须Process_image做成class
     //ui 交互
@@ -177,12 +192,6 @@ void Dialog::on_pushButton3_stdp_clicked()
 {
     //获取图像点
     double row = 0.0,col = 0.0,radius =0.0;
-
-    QMessageBox msgBox;
-    msgBox.setWindowTitle("提示");
-    msgBox.setText("请在图像上画出圆！！");
-    msgBox.exec();
-
     draw_circle(m_win_id,&row,&col,&radius);
     //image -- 对应model ，涉及 须Process_image做成class
     //ui 交互
@@ -194,12 +203,6 @@ void Dialog::on_pushButton4_stdp_clicked()
 {
     //获取图像点
     double row = 0.0,col = 0.0,radius =0.0;
-
-    QMessageBox msgBox;
-    msgBox.setWindowTitle("提示");
-    msgBox.setText("请在图像上画出圆！！");
-    msgBox.exec();
-
     draw_circle(m_win_id,&row,&col,&radius);
     //image -- 对应model ，涉及须Process_image做成class
     //ui 交互
@@ -246,14 +249,14 @@ void Dialog::on_pushButtonCalibra_clicked()
     //转化
     //标定时相机运动，螺丝不动，则图像为反逻辑
     Px[0] = t1_px;
-    Px[1] = 2*t1_px-t2_px;
-    Px[2] = 2*t1_px-t3_px;
-    Px[3] = 2*t1_px-t4_px;
+    Px[1] = t2_px;
+    Px[2] = t3_px;
+    Px[3] = t4_px;
 
     Py[0] = t1_py;
-    Py[1] = 2*t1_py-t2_py;
-    Py[2] = 2*t1_py-t3_py;
-    Py[3] = 2*t1_py-t4_py;
+    Py[1] = t2_py;
+    Py[2] = t3_py;
+    Py[3] = t4_py;
 
     Qx[0] = t1_wx;
     Qx[1] = t2_wx;

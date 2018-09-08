@@ -18,6 +18,7 @@
 #include "cpp/HalconCpp.h"
 #include "halfunc.h"
 #include "dialogcalibration.h"
+#include "dialogsetting.h"
 #include "dialogshapemodel.h"
 #include "cam.h"
 #include "aqdata.h"
@@ -62,9 +63,10 @@ public:
     //采集模块
     basler_cam m_snap_cam;
     int m_cam_width,m_cam_height;
-    //参数管理
+    //界面对象
     Dialog m_param_dialog;
     DialogShapeModel m_shape_model_dialog;
+    DialogSetting m_setting_dialog;
     //ini
     QString m_path_exe;//路径
     IniFile m_ini;
@@ -72,6 +74,7 @@ public:
     //图片保存
     bool m_SaveRaw=false;
     bool m_SaveResult=false;
+    bool m_SaveData=false;
     int image_save(Hobject& Image, bool bIsSaveRaw,bool bIsSaveResult);
     //报错管理
     aqlog m_log;
@@ -101,7 +104,7 @@ public:
     int hal_read_shape_model();
     int cal_data_ini_read();
     //图像处理
-    int image_process(Hobject& Image,Hlong model_id,double& pix_x,double& pix_y);
+    int image_process(Hobject& Image, Hlong model_id, double score, double& pix_x, double& pix_y);
     int cal_offset(double x,double y,
          double &world_offset_x, double &world_offset_y);    
     //处理后显示
@@ -139,6 +142,8 @@ private slots:
     void on_pushButton_SaveRaw_clicked();
 
     void on_pushButton_SaveResult_clicked();
+    void on_pushButton_SaveCoordinate_clicked();
+    void on_pushButton_ChangeLink_clicked();
 };
 
 /*

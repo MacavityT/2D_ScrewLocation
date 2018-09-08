@@ -36,26 +36,23 @@ public:
 //        }
 //        return *this;
 //    }
-    QModbusTcpServer *modbusDevice;
-
     //默认构造函数
     modbus_tcp_server();
     ~modbus_tcp_server();
 
     static bool main_thread_quit;
-
+    //connect parameters
+    QString port;
+    int server_address;
     //用于调用操作，连接plc
     int connection(bool connect_flag);
     //发送心跳信号给PLC
     void send_heartbeat_message();
 
 private:
+    QModbusTcpServer *modbusDevice;
     //Control object
     IniFile m_ini_reader;
-
-    //connect parameters
-    QString port;
-    int server_address;
     //read&write data
     quint16 value;
     QModbusDataUnit read_data;

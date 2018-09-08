@@ -22,7 +22,6 @@ void MyThreads::slot_image_capture()
     int m_cam_width=2592;
     int m_cam_height=1944;
     while (m_continue) {
-        QThread::sleep(1);
         if(0==p_cam->snap(0))
         {
             gen_image1(&m_image,"byte",m_cam_width,m_cam_height,(Hlong)p_cam->pImageBuffer[0]);
