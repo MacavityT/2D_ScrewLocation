@@ -6,6 +6,7 @@ DialogSetting::DialogSetting(QWidget *parent) :
     ui(new Ui::DialogSetting)
 {
     ui->setupUi(this);
+    this->setWindowTitle("Link Parameters");
     m_ini_reader.read("TCP_Param","port",port);
     m_ini_reader.read("TCP_Param","server_address",server);
     //控件初始化显示

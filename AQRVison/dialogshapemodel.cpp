@@ -14,6 +14,7 @@ DialogShapeModel::DialogShapeModel(QWidget *parent) :
     //设置界面图标
     setWindowIcon(QIcon(":home.png"));
     ui->setupUi(this);
+    this->setWindowTitle("Shape model dialog");
     ui->pushButtonCreateShapeModel->setEnabled(false);
     //设置路径选择窗口
     fileDialog=new QFileDialog(this);

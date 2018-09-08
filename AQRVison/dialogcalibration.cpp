@@ -9,6 +9,7 @@ Dialog::Dialog(QWidget *parent) :
     //设置界面图标
     setWindowIcon(QIcon(":home.png"));
     ui->setupUi(this);
+    this->setWindowTitle("Calibration dialog");
     //初始化按钮控件样式表
     auto all_object=this->children();
     QObjectList::iterator i;
