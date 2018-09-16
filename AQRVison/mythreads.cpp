@@ -8,9 +8,7 @@ void MyThreads::param_set(basler_cam* cam)
 
 void MyThreads::slot_heartbeat_sender_control(modbus_tcp_server* m_modbus)
 {
-    while (true) {
-        if(m_modbus->main_thread_quit)
-            return;
+    while (m_heartbeat) {
         QThread::sleep(1);
         m_modbus->send_heartbeat_message();
     }

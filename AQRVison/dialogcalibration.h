@@ -3,6 +3,7 @@
 
 #include <QDialog>
 #include <QDebug>
+#include "dialogshapemodel.h"
 #include "halfunc.h"
 #include "qfile.h"
 #include "qfiledialog.h"
@@ -60,6 +61,8 @@ private slots:
 
 public:
     int hal_init();
+    void widget_init();
+    void parameter_init();
     int image_take_point(double& resX,double& resY);
     int cam_init(basler_cam* ptr_cam);
     int write_cal_point_data();

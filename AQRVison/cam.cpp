@@ -5,14 +5,9 @@ basler_cam::basler_cam()
 {
     //最多5台相机
     m_c_maxCamerasToUse = 5;
-
-    //2592*1944  3840 2748
-//    m_cam_width = 3840;
-//    m_cam_height = 2748;
+    m_buffer_num = 20;
     m_cam_width = 2592;
     m_cam_height = 1944;
-
-    m_buffer_num = 20;
     for(int i = 0;i<m_buffer_num;i++)
     {
        pImageBuffer[i] = NULL;
@@ -80,12 +75,6 @@ int basler_cam::init()
     return 0;
 }
 
-//？？未使用
-int basler_cam::open()
-{
-    return 0;
-}
-
 //相机采集
 int basler_cam::snap(int cam_index)
 {
@@ -98,47 +87,19 @@ int basler_cam::snap(int cam_index)
     try
     {
         CGrabResultPtr ptrGrabResult;
-        int imageW = 0;
-        int imageH = 0;
-
-        for(int k = 0; k < 5;k++)
-        {
-            //Using GrabOne()  is more efficient if the pylon Device is already open,
-            //otherwise the pylon Device is opened and closed automatically for each call.
-           (*m_cams)[cam_index].StartGrabbing(1);
-           // Camera.StopGrabbing() is called automatically by the RetrieveResult() method
-           // when c_countOfImagesToGrab images have been retrieved.
-           while ( (*m_cams)[cam_index].IsGrabbing())
-           {   
-               // Wait for an image and then retrieve it. A timeout of 2000 ms is used.
-               (*m_cams)[cam_index].RetrieveResult( 2000, ptrGrabResult, TimeoutHandling_ThrowException);
-           }
-           // Image grabbed successfully?
-           if (ptrGrabResult->GrabSucceeded())
-           {
-//               ptrGrabResult->GetWidth();
-//               ptrGrabResult->GetHeight();
-               break;
-           }
-           else
-           {
-               continue;
-               //cout << "Error: " << ptrGrabResult->GetErrorCode() << " " << ptrGrabResult->GetErrorDescription() << endl;
-           }
-        }
-        //循环采集五次，结束后再次判断是否成功，以防五次都采集失败
-        if(!ptrGrabResult->GrabSucceeded())
-            return -2;
-        // Access the image data.
-        imageW = ptrGrabResult->GetWidth();
-        imageH = ptrGrabResult->GetHeight();
-        if((imageW != m_cam_width) || (imageH != m_cam_height))
-        {
-            return -3;
-        }
-
-        (uint8_t *) ptrGrabResult->GetBuffer();
-        memcpy(pImageBuffer[cam_index],ptrGrabResult->GetBuffer(), m_cam_width*m_cam_height*sizeof(uint8_t));
+       (*m_cams)[cam_index].StartGrabbing(1);
+       while ( (*m_cams)[cam_index].IsGrabbing())
+       {
+           // Wait for an image and then retrieve it. A timeout of 2000 ms is used.
+           (*m_cams)[cam_index].RetrieveResult( 2000, ptrGrabResult, TimeoutHandling_ThrowException);
+       }
+       // Image grabbed successfully?
+       if (!ptrGrabResult->GrabSucceeded())
+       {
+           return -1;
+       }
+       (uint8_t *) ptrGrabResult->GetBuffer();
+       memcpy(pImageBuffer[cam_index],ptrGrabResult->GetBuffer(), m_cam_width*m_cam_height*sizeof(uint8_t));
 
     }
     catch (const GenericException &e)

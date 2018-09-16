@@ -10,6 +10,7 @@
 
 #include <vector>
 #include <math.h>
+#include <bitset>
 
 #include "inifile.h"
 
@@ -55,12 +56,13 @@ private:
     IniFile m_ini_reader;
     //read&write data
     quint16 value;
+    QModbusDataUnit m_data;
     QModbusDataUnit read_data;
     QModbusDataUnit write_data;
     //Heart beat for plc
     bool heartbeat_flag=true;
     //data convert function
-    float quint_to_float(quint16 start_address);//两个寄存器转换为一个float
+    float quint_to_float(quint16 AB, quint16 CD);//两个寄存器转换为一个float
     int float_to_quint(float data,quint16 start_address);//一个float转换为两个寄存器
     //progress function
     int ini_modbus_server();

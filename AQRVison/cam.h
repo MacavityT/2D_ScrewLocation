@@ -39,7 +39,6 @@ public:
     ~basler_cam();
 
     int init();
-    int open();
     int snap(int cam_index);
     int exit();
 

@@ -41,10 +41,10 @@
     </property>
     <property name="geometry">
      <rect>
-      <x>760</x>
+      <x>730</x>
       <y>20</y>
-      <width>221</width>
-      <height>91</height>
+      <width>286</width>
+      <height>79</height>
      </rect>
     </property>
     <property name="sizePolicy">
@@ -278,7 +278,7 @@
       </font>
      </property>
      <property name="text">
-      <string>更改连接</string>
+      <string>连接选项</string>
      </property>
     </widget>
    </widget>
@@ -289,7 +289,7 @@
      <x>0</x>
      <y>0</y>
      <width>1024</width>
-     <height>33</height>
+     <height>27</height>
     </rect>
    </property>
    <property name="font">
@@ -302,8 +302,8 @@
      <rect>
       <x>339</x>
       <y>123</y>
-      <width>183</width>
-      <height>130</height>
+      <width>156</width>
+      <height>106</height>
      </rect>
     </property>
     <property name="font">

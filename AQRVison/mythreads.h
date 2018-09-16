@@ -19,7 +19,8 @@ public:
     basler_cam* p_cam;
     void param_set(basler_cam* cam);
     //外部控制标志位
-    bool m_continue=false;
+    bool m_heartbeat=true;
+    bool m_continue=false;//采图控制
 signals:
     void signal_transmit_image(Hobject);
 public slots:

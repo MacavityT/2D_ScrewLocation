@@ -105,8 +105,8 @@ public:
     int cal_data_ini_read();
     //图像处理
     int image_process(Hobject& Image, Hlong model_id, double score, double& pix_x, double& pix_y);
-    int cal_offset(double x,double y,
-         double &world_offset_x, double &world_offset_y);    
+    int cal_offset(double x,double y,double &world_offset_x, double &world_offset_y);
+    float x_coor,y_coor;//偏移量结果，如果未识别到则结果不变
     //处理后显示
     int image_show(Hobject& Image,HTuple& findRow,HTuple& findCol,bool bState);
 

@@ -2,6 +2,8 @@
 #include <QModbusTcpServer>
 #include <QRegularExpression>
 #include <QUrl>
+#include <QDebug>
+
 bool modbus_tcp_server::main_thread_quit=false;
 
 modbus_tcp_server::modbus_tcp_server()
@@ -33,7 +35,7 @@ int modbus_tcp_server::get_settings()
     QModbusDataUnit data_1(QModbusDataUnit::HoldingRegisters,0,10);
     write_data=data_1;
     //注册读取参数
-    QModbusDataUnit data_2(QModbusDataUnit::HoldingRegisters,21,10);
+    QModbusDataUnit data_2(QModbusDataUnit::HoldingRegisters,20,10);
     read_data=data_2;
 
     return 0;
@@ -63,7 +65,7 @@ int modbus_tcp_server::ini_modbus_server()
         reg.insert(QModbusDataUnit::Coils, { QModbusDataUnit::Coils, 0, 10 });
         reg.insert(QModbusDataUnit::DiscreteInputs, { QModbusDataUnit::DiscreteInputs, 0, 10 });
         reg.insert(QModbusDataUnit::InputRegisters, { QModbusDataUnit::InputRegisters, 0, 10 });
-        reg.insert(QModbusDataUnit::HoldingRegisters, { QModbusDataUnit::HoldingRegisters, 0, 10 });
+        reg.insert(QModbusDataUnit::HoldingRegisters, { QModbusDataUnit::HoldingRegisters, 0, 50 });
 
         modbusDevice->setMap(reg);
 
@@ -104,26 +106,30 @@ void modbus_tcp_server::handleDeviceError(QModbusDevice::Error newError)
 //接收数据
 void modbus_tcp_server::updateWidgets(QModbusDataUnit::RegisterType table, int address, int size)
 {
-    if(size<3)
-        return;//心跳
-    float screwdriver=quint_to_float(20);
-    float screw=quint_to_float(22);
-    float enable=quint_to_float(24);
-    float receive=quint_to_float(26);
-    float reserve=quint_to_float(28);
+    //非使能信号过滤
+    if(address<20)
+        return;
+    modbusDevice->data(&read_data);
+    float screwdriver=quint_to_float(read_data.value(0),read_data.value(1));
+    float screw=quint_to_float(read_data.value(2),read_data.value(3));
+    float enable=quint_to_float(read_data.value(4),read_data.value(5));
+    float receive=quint_to_float(read_data.value(6),read_data.value(7));
+    float reserve=quint_to_float(read_data.value(8),read_data.value(9));
+    if(receive==1.0)
+        setupDeviceData(0,0,0,0,0);
+    //触发检测函数
     emit signal_read_data(screwdriver,screw,enable,receive,reserve);
+
 }
 
 //接收数据转换
-float modbus_tcp_server::quint_to_float(quint16 start_address)
+float modbus_tcp_server::quint_to_float(quint16 AB,quint16 CD)
 {
     float data;
-    long double high_bit;
-    long double low_bit;
-    long double whole;
-    high_bit=read_data.value(start_address+1)*pow(0x10,4);
-    low_bit =read_data.value(start_address);
-    whole=high_bit+low_bit;
+    int high_bit=CD;
+    int low_bit=AB;
+    int whole;
+    whole=high_bit*pow(0x10,4)+low_bit;
     data=*((float*)&whole);//内存格式转换
 
     return data;
@@ -149,10 +155,10 @@ int modbus_tcp_server::setupDeviceData(float x_coor,float y_coor,\
 //待发送数据转换
 int modbus_tcp_server::float_to_quint(float data,quint16 start_address)
 {
-    quint16 high_bit;
-    quint16 low_bit;
-    long double whole;
-    whole=*((long double*)&data);
+    int high_bit;
+    int low_bit;
+    int whole;
+    whole=*((int*)&data);
     high_bit=whole/pow(0x10,4);
     low_bit=whole-high_bit*pow(0x10,4);
     write_data.setValue(start_address+1,high_bit);
@@ -204,22 +210,14 @@ void modbus_tcp_server::send_heartbeat_message()
         return;//连接失效
 
     //发送心跳信号
-    bool status;
     if(heartbeat_flag)
     {
-        status=modbusDevice->setData(QModbusDataUnit::HoldingRegisters,7,0);
-        if(status)
-        {
-            qDebug()<<"Heartbeat-0";
-        }
+        modbusDevice->setData(QModbusDataUnit::HoldingRegisters,7,0);
+
     }
     else
     {
-        status=modbusDevice->setData(QModbusDataUnit::HoldingRegisters,7,0x3f80);//ox3f80 0000 为浮点数1.0
-        if(status)
-        {
-            qDebug()<<"Heartbeat-1";
-        }
+        modbusDevice->setData(QModbusDataUnit::HoldingRegisters,7,0x3f80);//ox3f80 0000 为浮点数1.0
     }
     modbusDevice->setData(QModbusDataUnit::HoldingRegisters,6,0);
     heartbeat_flag=!heartbeat_flag;

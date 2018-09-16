@@ -75,6 +75,10 @@ private slots:
 
     void on_combo_Score_activated(const QString &arg1);
 
+    void on_pushButtonShowCross_clicked();
+
+    void on_pushButtonClearWindow_clicked();
+
 private:
     Ui::DialogShapeModel *ui;
 
@@ -92,6 +96,7 @@ private:
     //螺丝编号对应模板编号
     int screw_num=0;
     int screw_type=0;
+    double model_score=0.0;
 
     //list view列表所使用字段
     QStandardItemModel *standardItemModel;
@@ -106,6 +111,7 @@ private:
     MyThreads m_image_capture;
     //检测区域显示标志位
     bool detection_region_show=false;
+    bool detection_cross_show=false;
     //路径选择
     QString m_path_exe;
     QFileDialog *fileDialog;

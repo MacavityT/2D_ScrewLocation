@@ -5,6 +5,8 @@
 #include <QLabel>
 #include <QTime>
 #include <math.h>
+#include <bitset>
+#include <iostream>
 
 using namespace Halcon;
 
@@ -27,18 +29,25 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionParam, SIGNAL(triggered()), this, SLOT(on_menuParam()));
     connect(ui->actionShapeModel, SIGNAL(triggered()), this, SLOT(on_menuShapeModel()));
     //连接主流程与通信类
+    connect(&m_modbus,SIGNAL(signal_connect_button_status(bool)),this,SLOT(slot_connect_button_status(bool)));
     connect(&m_modbus,SIGNAL(signal_read_data(float,float,float,float,float)),\
             this,SLOT(slot_read_data(float,float,float,float,float)));
-    connect(&m_modbus,SIGNAL(signal_connect_button_status(bool)),this,SLOT(slot_connect_button_status(bool)));
-
     connect(this,SIGNAL(signal_setupDeviceData(float,float,float,float,float)),\
             &m_modbus,SLOT(setupDeviceData(float,float,float,float,float)));
-    //心跳连接，由主线程启动，副中调用modbus类函数
+    //连接调试界面与通信类
+    connect(&m_modbus,SIGNAL(signal_read_data(float,float,float,float,float)),\
+            &m_setting_dialog,SLOT(slot_read_data(float,float,float,float,float)));
+    connect(&m_setting_dialog,SIGNAL(signal_setupDeviceData(float,float,float,float,float)),\
+            &m_modbus,SLOT(setupDeviceData(float,float,float,float,float)));
+    //心跳连接，由主线程启动，副线程中调用modbus类函数
     connect(this,SIGNAL(signal_heartbeat_sender_control(modbus_tcp_server*)),\
             &m_heartbeat,SLOT(slot_heartbeat_sender_control(modbus_tcp_server*)));
     //建立心跳连接
     m_heartbeat.moveToThread(&m_thread_heartbeat);
     m_thread_heartbeat.start();
+    //开机启动
+    ui->pushButton_Connect->click();
+    ui->pushButton_Start->click();
 }
 
 MainWindow::~MainWindow()
@@ -61,8 +70,17 @@ void MainWindow::closeEvent(QCloseEvent *event)
     {
        case 0:
         //因为析构顺序是从类开始，再执行成员变量的析构，如果在关闭之前不停止信号发送，会导致没有对象可以接受信号从而报错
-        m_modbus.main_thread_quit=true;
-
+        m_modbus.main_thread_quit=true;//控制通信类回调销毁
+        //控制线程退出
+        if(m_heartbeat.m_heartbeat)
+        {
+            m_heartbeat.m_heartbeat=false;
+            Sleep(1000);
+        }
+        //断开连接
+        if(connection_status)
+            ui->pushButton_Connect->click();
+        //程序退出
            QApplication::quit();
            break;
        case 1:
@@ -84,7 +102,7 @@ int MainWindow::start_varia_init()
     if(0 != m_snap_cam.init())
     {
         ui->statusBar->showMessage(QString("Camer initialization failed,please exit the system!"));
-//        this->setEnabled(false);
+        this->setEnabled(false);
         return -1;
     }
 
@@ -213,18 +231,18 @@ int MainWindow::image_show(Hobject& Image,HTuple& findRow,HTuple& findCol,bool b
         set_line_width(m_win_id,3);
         disp_cross (m_win_id, findRow[0].D(), findCol[0].D(), 40, 0.78);
         disp_circle (m_win_id,findRow[0].D(), findCol[0].D(), 170);
-        set_display_font (m_win_id, 100, "mono", "true", "false");
+        set_display_font (m_win_id, 20, "mono", "true", "false");
 
-        disp_message (m_win_id, "X = " + findCol, "window", 40, 40,
-                     "green","false");
-        disp_message (m_win_id, "Y = " + findRow, "window", 90, 40,
-                     "green","false");
+        disp_message (m_win_id, "X = " + findCol + "  Offset_X=" + x_coor,\
+                      "window", 40, 40, "green","true");
+        disp_message (m_win_id, "Y = " + findRow + "  Offset_Y=" + y_coor,\
+                      "window", 90, 40, "green","true");
     }
     else
     {
         set_draw(m_win_id,"margin");
         set_color(m_win_id,"red");
-        set_display_font (m_win_id, 200, "mono", "true", "false");
+        set_display_font (m_win_id, 20, "mono", "true", "false");
 
         QString strQ("没发现匹配");
         QByteArray ba = strQ.toLocal8Bit();
@@ -242,7 +260,7 @@ int MainWindow::image_show(Hobject& Image,HTuple& findRow,HTuple& findCol,bool b
 void MainWindow::on_menuParam()
 {
     m_param_dialog.cam_init(&m_snap_cam);
-    m_param_dialog.exec();
+    m_param_dialog.show();
     return ;
 }
 
@@ -250,7 +268,7 @@ void MainWindow::on_menuParam()
 void MainWindow::on_menuShapeModel()
 {
     m_shape_model_dialog.cam_init(&m_snap_cam);
-    m_shape_model_dialog.exec();
+    m_shape_model_dialog.show();
     return ;
 }
 
@@ -295,6 +313,17 @@ void MainWindow::on_pushButton_Start_clicked()
 
     //加载模板
     hal_read_shape_model();
+    //加载检测区域
+    QString qdstr = m_path_exe + QString("/region/DetectionRegion.hobj");
+    QFile qfile1(qdstr);
+    if(false == qfile1.exists())
+    {
+        DialogShapeModel::print_qmess(QString("cann't find detection region file!"));
+        return;
+    }
+    QByteArray ba1 = qdstr.toLocal8Bit();
+    char* ch1 = ba1.data();
+    read_region(&m_region,ch1);
     //读取仿射变换矩阵（判断是否存在）
     QString mat_file = m_path_exe + "/cal/TransHomMat2D.tup";
     QFile qfile(mat_file);
@@ -322,7 +351,6 @@ void MainWindow::on_pushButton_Start_clicked()
     m_ini.read("StandardPosition","WorldCoordinate_y",m_cal_data.StdW.y);
     m_ini.read("StandardPosition","PixelCoordinate_x",m_cal_data.StdP.x);
     m_ini.read("StandardPosition","PixelCoordinate_y",m_cal_data.StdP.y);
-
     //界面显示--用户
     ui->pushButton_Stop->setEnabled(true);
     ui->pushButton_Start->setEnabled(false);
@@ -339,7 +367,6 @@ void MainWindow::on_pushButton_Start_clicked()
 //按钮：测试
 void MainWindow::on_pushButton_TestItem_clicked()
 {
-    m_setting_dialog.show();
 }
 
 //按钮：连接或断开PLC
@@ -395,10 +422,16 @@ void MainWindow::on_pushButton_ChangeLink_clicked()
 {
     if(m_setting_dialog.exec())
     {
+        //IP地址更改
         m_modbus.port=m_setting_dialog.port;
         m_modbus.server_address=m_setting_dialog.server;
         m_ini.write("TCP_Param","port",m_setting_dialog.port);
         m_ini.write("TCP_Param","server_address",m_setting_dialog.server);
+        //心跳控制更改
+        bool current_status=m_heartbeat.m_heartbeat;
+        m_heartbeat.m_heartbeat=m_setting_dialog.m_heartbeat;
+        if(!current_status&&m_heartbeat.m_heartbeat)
+            emit signal_heartbeat_sender_control(&m_modbus);
     }
 }
 
@@ -413,6 +446,7 @@ void MainWindow::slot_connect_button_status(bool connected)
     {
         ui->pushButton_Connect->setText(tr("断开"));
         ui->textBrowser->append("连接成功");
+        //心跳连接
         emit signal_heartbeat_sender_control(&m_modbus);
     }
     else
@@ -428,26 +462,27 @@ void MainWindow::slot_read_data(float screwdriver, float screw, float enable, fl
         return;//程序未运行，接收数据不处理
     if(0.0==enable)
         return;//拍照禁止
-    if(1.0==receive)
-    {
-        emit signal_setupDeviceData(NULL,NULL,0,NULL,NULL);
-        return;//接收完成拍照位置0
-    }
+    //准备错误信息
+    QString error_message;
+    QString wrong_screwdriver;
+    QString wrong_screw;
+    error_message=wrong_screwdriver.setNum(screwdriver)+'_'+wrong_screw.setNum(screw)+":";
     //判断模板是否存在
     int screwdriver_index=screwdriver;
-
     int screw_index=screw;
     //判断两张map是否都存在映射关系
     if ( m_ModelID.find(screwdriver_index)==m_ModelID.end() ||\
          (m_ModelID[screwdriver_index]).find(screw_index)==(m_ModelID[screwdriver_index]).end())
     {
-        ui->textBrowser->append("the template is unexisted!\n");
+        ui->textBrowser->append(error_message+"The template is unexisted!\n");
+        emit signal_setupDeviceData(x_coor,y_coor,1.0,NULL,NULL);
         return;
     }
     //开始处理
     if(0!=m_snap_cam.snap(0))
     {
-        ui->textBrowser->append("采集图像失败！\n");
+        ui->textBrowser->append(error_message+"采集图像失败！\n");
+        emit signal_setupDeviceData(x_coor,y_coor,1.0,NULL,NULL);
         return;
     }
     gen_image1(&m_image,"byte",m_snap_cam.m_cam_width,m_snap_cam.m_cam_height,(Hlong)m_snap_cam.pImageBuffer[0]);
@@ -468,31 +503,33 @@ void MainWindow::slot_read_data(float screwdriver, float screw, float enable, fl
         score=0.5;
 
     int err = 0;
-    err = image_process(m_image, (m_ModelID[screwdriver_index])[screw_index],score,pix_x,pix_y);
+    Hobject tem_image;
+    copy_image(m_image,&tem_image);
+    err = image_process(tem_image, (m_ModelID[screwdriver_index])[screw_index],score,pix_x,pix_y);
     if(0 != err)
     {
         HTuple px = 0.0;
         HTuple py = 0.0;
         image_show(m_image,py,px,false);
-        ui->textBrowser->append("定位螺丝失败!\n");
+        ui->textBrowser->append(error_message+"定位螺丝失败!\n");
+        emit signal_setupDeviceData(x_coor,y_coor,1.0,NULL,NULL);
         return;
     }
 
-    err = cal_offset(pix_x,pix_y,offset_x,offset_y);//返回的offset值为当前识别物理位置与记录的标准物理位置的偏移量
+    err = cal_offset(pix_x,pix_y,offset_x,offset_y);//返回的offset值为当前识别物理位置与记录的标准上螺丝物理位置的偏移量
     if(0 != err)
     {
         HTuple px = 0.0;
         HTuple py = 0.0;
         image_show(m_image,py,px,false);
-        ui->textBrowser->append("cal_offset失败!!\n");
+        ui->textBrowser->append(error_message+"cal_offset失败!!\n");
+        emit signal_setupDeviceData(x_coor,y_coor,1.0,NULL,NULL);
         return;
     }
-    //结果发送
-    float x_coor,y_coor;
+    //结果发送   
     x_coor=offset_x;
     y_coor=offset_y;
     emit signal_setupDeviceData(x_coor,y_coor,1.0,NULL,NULL);
-
     //显示当前图片
     HTuple px = HTuple(pix_x);
     HTuple py = HTuple(pix_y);
@@ -509,6 +546,7 @@ int MainWindow::image_process(Hobject& Image,Hlong model_id,double score,double&
     HTuple findRow,findCol,findAngle,findScore;
 
     double dradRange = HTuple(360).Rad()[0].D();
+    reduce_domain(Image,m_region,&Image);
     find_shape_model(Image,  model_id, 0, dradRange , score, 1, 0.5,
                      "least_squares", 3, 0.9, &findRow, &findCol, &findAngle, &findScore);
 
@@ -516,7 +554,7 @@ int MainWindow::image_process(Hobject& Image,Hlong model_id,double score,double&
     if(1 != findRow.Num())
     {
         set_color(m_win_id,"red");
-        set_display_font (m_win_id, 80, "mono", "true", "false");
+        set_display_font (m_win_id, 20, "mono", "true", "false");
         disp_message (m_win_id, "no match", "image", 40, 40, "red","true");
         pix_x = -1.0;
         pix_y = -1.0;
@@ -533,14 +571,17 @@ int MainWindow::image_process(Hobject& Image,Hlong model_id,double score,double&
 //计算偏移量
 int MainWindow::cal_offset(double x,double y,double &world_offset_x, double &world_offset_y)
 {
-    double world_x,world_y;
+    double world_x,world_y;//仿射后的螺丝坐标
+    double mid_x,mid_y;//标准螺丝图像位仿射后的坐标
     // read Mat and do affine trans
     try
     {
         affine_trans_point_2d(HomMat2D, x, y, \
                           &world_x, &world_y);
-        world_offset_x = world_x - m_cal_data.StdW.x;
-        world_offset_y = world_y - m_cal_data.StdW.y;
+        affine_trans_point_2d(HomMat2D,m_cal_data.StdP.x,m_cal_data.StdP.y,\
+                          &mid_x,&mid_y);
+        world_offset_x = (world_x - mid_x) + (m_cal_data.LuoW.x - m_cal_data.StdW.x);
+        world_offset_y = (world_y - mid_y) + (m_cal_data.LuoW.y - m_cal_data.StdW.y);
     }
     catch(exception &e)
     {

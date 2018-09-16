@@ -186,6 +186,7 @@ void DialogShapeModel::on_pushButtonPicContinue_clicked()
 //            static_cast<QPushButton*>(button)->setEnabled(!status);
         }
     }
+    ui->pushButton_confirm->setEnabled(!status);
     if(status)
         ui->pushButtonPicContinue->setText(tr("停止采图"));
     else
@@ -197,7 +198,15 @@ void DialogShapeModel::slot_transmit_image(Hobject image)
     //获取并显示图像，由线程不断触发
     disp_obj(image,m_win_id);
     if(detection_region_show)
+    {
         disp_obj(m_detect_region,m_win_id);
+    }
+    if(detection_cross_show)
+    {
+        disp_cross(m_win_id,1944/2,2592/2,120,0);
+        disp_cross(m_win_id, ((HTuple(1944/3).Concat(1944/3)).Concat((1944*2)/3)).Concat((1944*2)/3),
+            ((HTuple(2592/3).Concat((2592*2)/3)).Concat(2592/3)).Concat((2592*2)/3), 60, 0);
+    }
 }
 
 //按钮：单帧采图
@@ -316,7 +325,7 @@ void DialogShapeModel::on_pushButtonDetectRegion_clicked()
     print_qmess(QString("创建成功"));
 }
 
-//选择是否在连续采集中显示准心区域
+//选择是否在连续采集中显示圆形区域
 void DialogShapeModel::on_pushButtonShowRegion_clicked()
 {
     QString qdstr = m_path_exe + QString("/region/DetectionRegion.hobj");
@@ -333,6 +342,27 @@ void DialogShapeModel::on_pushButtonShowRegion_clicked()
     {
         ui->pushButtonShowRegion->setText(QString("显示区域"));
     }
+}
+
+//显示准心
+void DialogShapeModel::on_pushButtonShowCross_clicked()
+{
+    detection_cross_show=!detection_cross_show;
+    if(detection_cross_show)
+    {
+        ui->pushButtonShowCross->setText(QString("取消显示"));
+    }
+    else
+    {
+        ui->pushButtonShowCross->setText(QString("显示准心"));
+    }
+}
+
+//清空窗口及图像
+void DialogShapeModel::on_pushButtonClearWindow_clicked()
+{    
+    clear_window(m_win_id);
+    gen_empty_obj(&m_image);
 }
 
 //////模板创建部分
@@ -357,6 +387,7 @@ void DialogShapeModel::on_combo_Score_activated(const QString &arg1)
     screw_index.setNum(screw_num);
     m_fileName=driver_index+'_'+screw_index;
     m_ini.write("Model_Score",m_fileName,score);
+    model_score=score.toDouble();
 }
 
 //关系确定后命名并创建模板
@@ -376,7 +407,11 @@ void DialogShapeModel::on_pushButton_confirm_clicked()
 
     //开始绘画模板,完成创建后保存按钮使能
     if(0==draw_show())
+    {
+        m_ini.write("Model_Score",m_fileName,model_score);
+        //保存使能
         ui->pushButtonCreateShapeModel->setEnabled(true);
+    }
 }
 
 //保存模板
@@ -397,6 +432,7 @@ int DialogShapeModel::ClickButtonCreateShapeModel()
     //刷新list
     strList.append("match-" + m_fileName + ".shm");
     refresh_list();
+	ui->pushButtonCreateShapeModel->setEnabled(false);
 
     return 0;
 }
@@ -444,6 +480,31 @@ int DialogShapeModel::draw_show()
 //模板创建后的处理，包括保存模板及对应的图片
 int DialogShapeModel::save_templa_image()
 {
+	//读取文件夹
+    QDir dir1(m_path_exe + "/matchImage/");
+    QDir dir2(m_path_exe + "/match/");
+    dir1.setFilter(QDir::Files | QDir::NoSymLinks);
+    dir2.setFilter(QDir::Files | QDir::NoSymLinks);
+    //判断文件夹是否存在，不存在则创建
+    bool is_mkdir;
+    if (false == dir1.exists())
+    {
+        is_mkdir= dir1.mkdir(m_path_exe + "/matchImage/");
+        if (false == is_mkdir)
+        {
+            m_log.write_log("DialogShapeModel::save_templa_image(): the folder matchImage mkdir failed!");
+            return -2;
+        }
+    }
+    if (false == dir2.exists())
+    {
+        is_mkdir = dir2.mkdir(m_path_exe + "/matchImage/");
+        if (false == is_mkdir)
+        {
+            m_log.write_log("DialogShapeModel::save_templa_image(): the folder matchImage mkdir failed!");
+            return -2;
+        }
+    }
     //保存模板
     QString qdstr = m_path_exe + QString("/match/match-" + m_fileName + ".shm");
     QByteArray ba = qdstr.toLocal8Bit();
@@ -460,20 +521,6 @@ int DialogShapeModel::save_templa_image()
     }
 
     //保存图片
-    //读取文件夹
-    QDir dir(m_path_exe + "/matchImage/");
-    dir.setFilter(QDir::Files | QDir::NoSymLinks);
-
-    //判断文件夹是否存在，不存在则创建
-    if (false == dir.exists())
-    {
-        bool is_mkdir = dir.mkdir(m_path_exe + "/matchImage/");
-        if (false == is_mkdir)
-        {
-            m_log.write_log("DialogShapeModel::save_templa_image(): the folder matchImage mkdir failed!");
-            return -2;
-        }
-    }
 
     qdstr = m_path_exe + QString("/matchImage/" + m_fileName + ".bmp");
     ba = qdstr.toLocal8Bit();
@@ -530,7 +577,7 @@ void DialogShapeModel::deleteFile()
         del_f.close();
 
         QList<QString>::Iterator it = strList.begin(),itend = strList.end();
-        for (;it != itend; it++){
+        for (it;it != itend; it++){
             if (*it == del_file_name)
             {
                 strList.erase(it);
@@ -633,12 +680,41 @@ void DialogShapeModel::on_pushButton_Test_clicked()
         print_qmess(QString("读取模板失败"));
         return;
     }
+    ////获取目标模板相似度
+    //获取批头号及螺丝编号
+    QString index_name = template_name.replace("match-", "").replace(".shm", "");
+    QByteArray trans2=index_name.toLatin1();
+    char* split_name=trans2.data();
+    bool screw_num_start=false;
+    QString screw_driver_index="";
+    QString screw_index="";
+    for(split_name;*split_name!='\0';split_name++)
+    {
+        if(screw_num_start)
+        {
+            //螺丝编号
+            screw_index+=*split_name;
+        }
+        if(*split_name!='_'&&!screw_num_start)
+        {
+            //批头型号
+            screw_driver_index+=*split_name;
+        }
+        else
+        {
+            screw_num_start=true;
+        }
+    }
+    //获取模板分数
+    double score;
+    m_ini.read("Model_Score",screw_driver_index+'_'+screw_index,score);
+
     //查找模板
     HTuple findRow,findCol,findAngle,findScore;
     double dradRange = HTuple(360).Rad()[0].D();
     try
     {
-        find_shape_model(m_image,  test_modelID, 0, dradRange , 0.5, 1, 0.5,
+        find_shape_model(m_image,  test_modelID, 0, dradRange , score, 1, 0.5,
                          "least_squares", 3, 0.9, &findRow, &findCol, &findAngle, &findScore);
     }
     catch(...)
@@ -664,4 +740,7 @@ void DialogShapeModel::on_pushButton_Test_clicked()
     set_draw(m_win_id, "margin");
     disp_obj(m_image, m_win_id);
     disp_obj(Contours, m_win_id);
+    //显示模板坐标
+    disp_message (m_win_id, (("X="+(findCol.Select(0)))+"   Y=")+(findRow.Select(0)),\
+                  "image", 40, 40, "green","true");
 }

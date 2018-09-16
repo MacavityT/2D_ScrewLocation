@@ -18,12 +18,23 @@ public:
 
     QString port;
     int server;
+    bool m_heartbeat=true;
     IniFile m_ini_reader;
+private:
+    float data_array[5];
+    void setupWidgetContainers();
+    void data_sender(const QString &value);
+signals:
+    void signal_setupDeviceData(float,float,float,float,float);
+public slots:
+    void slot_read_data(float,float,float,float,float);
 
 private slots:
     void on_TcpAddress_textChanged(const QString &arg1);
 
     void on_TcpServer_textChanged(const QString &arg1);
+
+    void on_HeartBeatControl_clicked();
 
 private:
     Ui::DialogSetting *ui;
