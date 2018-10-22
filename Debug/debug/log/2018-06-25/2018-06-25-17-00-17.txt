@@ -1,8 +1,0 @@
---------------
-2018.06.25 17:00:17:963,DialogShapeModel::start_ui_init(): read image failed!
---------------
-2018.06.25 17:00:18:739,MainWindow::start_ui_init(): read image error!
-2018.06.25 17:01:52:280,MainWindow::tcp_init(): ip or port error!
-2018.06.25 17:01:54:797,MainWindow::tcp_init(): ip or port error!
-2018.06.25 17:01:55:005,MainWindow::tcp_init(): ip or port error!
-2018.06.25 17:01:55:205,MainWindow::tcp_init(): ip or port error!

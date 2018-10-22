@@ -101,8 +101,8 @@ int MainWindow::start_varia_init()
     //相机初始化状态判断
     if(0 != m_snap_cam.init())
     {
-        ui->statusBar->showMessage(QString("Camer initialization failed,please exit the system!"));
-        this->setEnabled(false);
+        ui->statusBar->showMessage(QString("Camera initialization failed,please exit the system!"));
+//        this->setEnabled(false);
         return -1;
     }
 
@@ -512,7 +512,7 @@ void MainWindow::slot_read_data(float screwdriver, float screw, float enable, fl
         HTuple py = 0.0;
         image_show(m_image,py,px,false);
         ui->textBrowser->append(error_message+"定位螺丝失败!\n");
-        emit signal_setupDeviceData(x_coor,y_coor,1.0,NULL,NULL);
+        emit signal_setupDeviceData(-1.0,-1.0,1.0,NULL,NULL);
         return;
     }
 
@@ -523,7 +523,7 @@ void MainWindow::slot_read_data(float screwdriver, float screw, float enable, fl
         HTuple py = 0.0;
         image_show(m_image,py,px,false);
         ui->textBrowser->append(error_message+"cal_offset失败!!\n");
-        emit signal_setupDeviceData(x_coor,y_coor,1.0,NULL,NULL);
+        emit signal_setupDeviceData(-1.0,-1.0,1.0,NULL,NULL);
         return;
     }
     //结果发送   

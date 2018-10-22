@@ -1,2 +1,0 @@
---------------
-2018.07.12 17:05:01:150,DialogShapeModel::start_ui_init(): read image failed!

@@ -1,4 +1,0 @@
---------------
-2018.08.27 09:03:46:298,DialogShapeModel::start_ui_init(): read image failed!
---------------
-2018.08.27 09:03:47:566,MainWindow::start_varia_init(): cam init err!!!

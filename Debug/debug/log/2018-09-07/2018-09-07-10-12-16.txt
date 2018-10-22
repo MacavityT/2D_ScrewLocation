@@ -1,2 +1,0 @@
---------------
-2018.09.07 10:13:07:473,DialogShapeModel::save_templa_image(): error!

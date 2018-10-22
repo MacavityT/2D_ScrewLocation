@@ -1,5 +1,0 @@
---------------
-2018.06.24 18:27:50:749,MainWindow::start_varia_init(): cam init err!!!
-2018.06.24 18:27:50:907,MainWindow::start_ui_init(): read image error!
-2018.06.24 18:28:02:490,MainWindow::tcp_init(): ip or port error!
-2018.06.24 18:28:02:829,MainWindow::tcp_init(): ip or port error!

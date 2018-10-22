@@ -1,6 +1,0 @@
---------------
-2018.06.25 10:39:52:563,DialogShapeModel::start_ui_init(): read image failed!
---------------
-2018.06.25 10:39:52:903,MainWindow::start_varia_init(): cam init err!!!
-2018.06.25 10:39:52:957,MainWindow::start_ui_init(): read image error!
-2018.06.25 10:39:58:404,MainWindow::tcp_init(): ip or port error!

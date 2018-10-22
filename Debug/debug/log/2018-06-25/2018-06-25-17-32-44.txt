@@ -1,3 +1,0 @@
---------------
-2018.06.25 17:32:44:870,MainWindow::start_ui_init(): read image error!
-2018.06.25 17:37:46:679,MainWindow::tcp_init(): ip or port error!
