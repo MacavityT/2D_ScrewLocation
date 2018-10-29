@@ -475,14 +475,14 @@ void MainWindow::slot_read_data(float screwdriver, float screw, float enable, fl
          (m_ModelID[screwdriver_index]).find(screw_index)==(m_ModelID[screwdriver_index]).end())
     {
         ui->textBrowser->append(error_message+"The template is unexisted!\n");
-        emit signal_setupDeviceData(x_coor,y_coor,1.0,NULL,NULL);
+        emit signal_setupDeviceData(-1.0,-1.0,1.0,NULL,NULL);
         return;
     }
     //开始处理
     if(0!=m_snap_cam.snap(0))
     {
         ui->textBrowser->append(error_message+"采集图像失败！\n");
-        emit signal_setupDeviceData(x_coor,y_coor,1.0,NULL,NULL);
+        emit signal_setupDeviceData(-1.0,-1.0,1.0,NULL,NULL);
         return;
     }
     gen_image1(&m_image,"byte",m_snap_cam.m_cam_width,m_snap_cam.m_cam_height,(Hlong)m_snap_cam.pImageBuffer[0]);
@@ -548,7 +548,7 @@ int MainWindow::image_process(Hobject& Image,Hlong model_id,double score,double&
     double dradRange = HTuple(360).Rad()[0].D();
     reduce_domain(Image,m_region,&Image);
     find_shape_model(Image,  model_id, 0, dradRange , score, 1, 0.5,
-                     "least_squares", 3, 0.9, &findRow, &findCol, &findAngle, &findScore);
+                     "least_squares", 5, 0.3, &findRow, &findCol, &findAngle, &findScore);
 
     //判断findRow有无
     if(1 != findRow.Num())
