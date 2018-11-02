@@ -203,9 +203,14 @@ void DialogShapeModel::slot_transmit_image(Hobject image)
     }
     if(detection_cross_show)
     {
-        disp_cross(m_win_id,1944/2,2592/2,120,0);
-        disp_cross(m_win_id, ((HTuple(1944/3).Concat(1944/3)).Concat((1944*2)/3)).Concat((1944*2)/3),
-            ((HTuple(2592/3).Concat((2592*2)/3)).Concat(2592/3)).Concat((2592*2)/3), 60, 0);
+        HTuple URow=1944/4;
+        HTuple UCol=2592/4;
+        disp_cross(m_win_id, ((HTuple(URow).Concat(2*URow)).Concat(3*URow)),\
+                  ((HTuple(UCol).Concat(UCol)).Concat(UCol)), 60, 0);
+        disp_cross(m_win_id, ((HTuple(URow).Concat(2*URow)).Concat(3*URow)),\
+                  ((HTuple(2*UCol).Concat(2*UCol)).Concat(2*UCol)), 60, 0);
+        disp_cross(m_win_id, ((HTuple(URow).Concat(2*URow)).Concat(3*URow)),\
+                  ((HTuple(3*UCol).Concat(3*UCol)).Concat(3*UCol)), 60, 0);
     }
 }
 
