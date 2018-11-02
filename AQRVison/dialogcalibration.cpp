@@ -16,6 +16,9 @@ Dialog::Dialog(QWidget *parent) :
     parameter_init();
     //Halocn窗体初始化
     hal_init();
+    //标定参数初始化
+    memset(Calibrate_data_X,0,sizeof(double)*10);
+    memset(Calibrate_data_Y,0,sizeof(double)*10);
     //路径初始化
     m_path_exe = QCoreApplication::applicationDirPath();
 }
@@ -98,49 +101,6 @@ void Dialog::parameter_init()
     m_ini.read("StandardPosition","PixelCoordinate_y",pStdy);
     ui->textEdit_pStdx->setText(pStdx);
     ui->textEdit_pStdy->setText(pStdy);
-    //点1
-    QString one_wx,one_wy,one_px,one_py;
-    m_ini.read("Cal", "WX1", one_wx);
-    m_ini.read("Cal", "WY1", one_wy);
-    m_ini.read("Cal", "PX1", one_px);
-    m_ini.read("Cal", "PY1", one_py);
-    ui->textEdit1_wx->setText(one_wx);
-    ui->textEdit1_wy->setText(one_wy);
-    ui->textEdit1_px->setText(one_px);
-    ui->textEdit1_py->setText(one_py);
-
-    //点2
-    QString two_wx,two_wy,two_px,two_py;
-    m_ini.read("Cal", "WX2", two_wx);
-    m_ini.read("Cal", "WY2", two_wy);
-    m_ini.read("Cal", "PX2", two_px);
-    m_ini.read("Cal", "PY2", two_py);
-    ui->textEdit2_wx->setText(two_wx);
-    ui->textEdit2_wy->setText(two_wy);
-    ui->textEdit2_px->setText(two_px);
-    ui->textEdit2_py->setText(two_py);
-
-    //点3
-    QString three_wx,three_wy,three_px,three_py;
-    m_ini.read("Cal", "WX3", three_wx);
-    m_ini.read("Cal", "WY3", three_wy);
-    m_ini.read("Cal", "PX3", three_px);
-    m_ini.read("Cal", "PY3", three_py);
-    ui->textEdit3_wx->setText(three_wx);
-    ui->textEdit3_wy->setText(three_wy);
-    ui->textEdit3_px->setText(three_px);
-    ui->textEdit3_py->setText(three_py);
-
-    //点4
-    QString four_wx,four_wy,four_px,four_py;
-    m_ini.read("Cal", "WX4", four_wx);
-    m_ini.read("Cal", "WY4", four_wy);
-    m_ini.read("Cal", "PX4", four_px);
-    m_ini.read("Cal", "PY4", four_py);
-    ui->textEdit4_wx->setText(four_wx);
-    ui->textEdit4_wy->setText(four_wy);
-    ui->textEdit4_px->setText(four_px);
-    ui->textEdit4_py->setText(four_py);
 }
 
 //图像开窗
@@ -217,135 +177,70 @@ void Dialog::on_pushButtonPicOne_clicked()
     return ;
 }
 
-////标定点坐标，直接填写后点击标定按钮
-//获取物理点按钮，通信获取点位过于麻烦,保留按钮，方便后期功能扩展
-void Dialog::on_pushButton1_stdw_clicked()
+////标定点坐标，只需要填写物理坐标，图像坐标为固定坐标
+void Dialog::on_PointSelector_activated(int index)
 {
-    //通讯PLC交互，获取当前物理点
-    ui->textEdit1_wx->toPlainText().toDouble();
-    ui->textEdit1_wy->toPlainText().toDouble();
+    Calibrate_Point=index;
+    ui->XCoordinate->setText(QString::number(Calibrate_data_X[index]));
+    ui->YCoordinate->setText(QString::number(Calibrate_data_Y[index]));
 }
 
-void Dialog::on_pushButton2_stdw_clicked()
+void Dialog::on_XCoordinate_textChanged()
 {
-    ui->textEdit2_wx->toPlainText().toDouble();
-    ui->textEdit2_wy->toPlainText().toDouble();
+    Calibrate_data_X[Calibrate_Point]=ui->XCoordinate->toPlainText().toDouble();
 }
 
-void Dialog::on_pushButton3_stdw_clicked()
+void Dialog::on_YCoordinate_textChanged()
 {
-    ui->textEdit3_wx->toPlainText().toDouble();
-    ui->textEdit3_wy->toPlainText().toDouble();
-}
-
-void Dialog::on_pushButton4_stdw_clicked()
-{
-    ui->textEdit4_wx->toPlainText().toDouble();
-    ui->textEdit4_wy->toPlainText().toDouble();
-}
-
-//获取图像点按钮，用户手动圆形工具选取点坐标
-void Dialog::on_pushButton1_stdp_clicked()
-{
-    //获取图像点
-    double row = 0.0,col = 0.0,radius =0.0;
-    draw_circle(m_win_id,&row,&col,&radius);
-    //image -- 对应model ，涉及 须Process_image做成class
-    //ui 交互
-    ui->textEdit1_px->setText(QString::number(col, 10, 2));
-    ui->textEdit1_py->setText(QString::number(row, 10, 2));
-
-}
-
-void Dialog::on_pushButton2_stdp_clicked()
-{
-    //获取图像点
-    double row = 0.0,col = 0.0,radius =0.0;
-    draw_circle(m_win_id,&row,&col,&radius);
-    //image -- 对应model ，涉及 须Process_image做成class
-    //ui 交互
-    ui->textEdit2_px->setText(QString::number(col, 10, 2));
-    ui->textEdit2_py->setText(QString::number(row, 10, 2));
-}
-
-void Dialog::on_pushButton3_stdp_clicked()
-{
-    //获取图像点
-    double row = 0.0,col = 0.0,radius =0.0;
-    draw_circle(m_win_id,&row,&col,&radius);
-    //image -- 对应model ，涉及 须Process_image做成class
-    //ui 交互
-    ui->textEdit3_px->setText(QString::number(col, 10, 2));
-    ui->textEdit3_py->setText(QString::number(row, 10, 2));
-}
-
-void Dialog::on_pushButton4_stdp_clicked()
-{
-    //获取图像点
-    double row = 0.0,col = 0.0,radius =0.0;
-    draw_circle(m_win_id,&row,&col,&radius);
-    //image -- 对应model ，涉及须Process_image做成class
-    //ui 交互
-    ui->textEdit4_px->setText(QString::number(col, 10, 2));
-    ui->textEdit4_py->setText(QString::number(row, 10, 2));
+    Calibrate_data_Y[Calibrate_Point]=ui->YCoordinate->toPlainText().toDouble();
 }
 
 //Calibration
 void Dialog::on_pushButtonCalibra_clicked()
 {
-    //输入检查
     HTuple HomMat2D;
     HTuple Px,Py,Qx,Qy;
     QMessageBox msgBox;
     msgBox.setWindowTitle("Warnning");
-    //标定数据
-    double t1_px = ui->textEdit1_px->toPlainText().toDouble();
-    double t2_px = ui->textEdit2_px->toPlainText().toDouble();
-    double t3_px = ui->textEdit3_px->toPlainText().toDouble();
-    double t4_px = ui->textEdit4_px->toPlainText().toDouble();
-
-    double t1_py = ui->textEdit1_py->toPlainText().toDouble();
-    double t2_py = ui->textEdit2_py->toPlainText().toDouble();
-    double t3_py = ui->textEdit3_py->toPlainText().toDouble();
-    double t4_py = ui->textEdit4_py->toPlainText().toDouble();
-
-    double t1_wx = ui->textEdit1_wx->toPlainText().toDouble();
-    double t2_wx = ui->textEdit2_wx->toPlainText().toDouble();
-    double t3_wx = ui->textEdit3_wx->toPlainText().toDouble();
-    double t4_wx = ui->textEdit4_wx->toPlainText().toDouble();
-
-    double t1_wy = ui->textEdit1_wy->toPlainText().toDouble();
-    double t2_wy = ui->textEdit2_wy->toPlainText().toDouble();
-    double t3_wy = ui->textEdit3_wy->toPlainText().toDouble();
-    double t4_wy = ui->textEdit4_wy->toPlainText().toDouble();
     //检测数据情况
-    if(t1_px*t2_px*t3_px*t4_px*t1_py*t2_py*t3_py*t4_py*\
-            t1_wx*t2_wx*t3_wx*t4_wx*t1_wy*t2_wy*t3_wy*t4_wy==0)
+    for(int i=1;i<10;i++)
     {
-        msgBox.setText("Please fill up the coordinate data!");
-        msgBox.exec();
-        return;
+        if(Calibrate_data_X[i]==0||Calibrate_data_Y[i]==0)
+        {
+            msgBox.setText("Please fill up the coordinate data!");
+            msgBox.exec();
+            return;
+        }
     }
-    //转化
-    Px[0] = t1_px;
-    Px[1] = t2_px;
-    Px[2] = t3_px;
-    Px[3] = t4_px;
+    //图像坐标
+    HTuple URow=1944/4;
+    HTuple UCol=2592/4;
+    Px[0]=UCol;
+    Py[0]=URow;
+    Px[1]=2*UCol;
+    Py[1]=URow;
+    Px[2]=3*UCol;
+    Py[2]=URow;
 
-    Py[0] = t1_py;
-    Py[1] = t2_py;
-    Py[2] = t3_py;
-    Py[3] = t4_py;
+    Px[3]=3*UCol;
+    Py[3]=2*URow;
+    Px[4]=2*UCol;
+    Py[4]=2*URow;
+    Px[5]=UCol;
+    Py[5]=2*URow;
 
-    Qx[0] = t1_wx;
-    Qx[1] = t2_wx;
-    Qx[2] = t3_wx;
-    Qx[3] = t4_wx;
-
-    Qy[0] = t1_wy;
-    Qy[1] = t2_wy;
-    Qy[2] = t3_wy;
-    Qy[3] = t4_wy;
+    Px[6]=UCol;
+    Py[6]=3*URow;
+    Px[7]=2*UCol;
+    Py[7]=3*URow;
+    Px[8]=3*UCol;
+    Py[8]=3*URow;
+    //世界坐标
+    for(int k=0;k<9;k++)
+    {
+        Qx[k]=Calibrate_data_X[k+1];
+        Qy[k]=Calibrate_data_Y[k+1];
+    }
     //标定
     try
     {
@@ -402,46 +297,13 @@ int Dialog::write_cal_point_data()
     m_ini.write("StandardPosition","PixelCoordinate_x",ui->textEdit_pStdx->toPlainText().toDouble());
     m_ini.write("StandardPosition","PixelCoordinate_y",ui->textEdit_pStdy->toPlainText().toDouble());
 
-    //点1
-    double one_wx = ui->textEdit1_wx->toPlainText().toDouble();
-    double one_wy = ui->textEdit1_wy->toPlainText().toDouble();
-    double one_px = ui->textEdit1_px->toPlainText().toDouble();
-    double one_py = ui->textEdit1_py->toPlainText().toDouble();
-    m_ini.write("Cal", "WX1", one_wx);
-    m_ini.write("Cal", "WY1", one_wy);
-    m_ini.write("Cal", "PX1", one_px);
-    m_ini.write("Cal", "PY1", one_py);
-
-    //点2
-    double two_wx = ui->textEdit2_wx->toPlainText().toDouble();
-    double two_wy = ui->textEdit2_wy->toPlainText().toDouble();
-    double two_px = ui->textEdit2_px->toPlainText().toDouble();
-    double two_py = ui->textEdit2_py->toPlainText().toDouble();
-    m_ini.write("Cal", "WX2", two_wx);
-    m_ini.write("Cal", "WY2", two_wy);
-    m_ini.write("Cal", "PX2", two_px);
-    m_ini.write("Cal", "PY2", two_py);
-
-    //点3
-    double three_wx = ui->textEdit3_wx->toPlainText().toDouble();
-    double three_wy = ui->textEdit3_wy->toPlainText().toDouble();
-    double three_px = ui->textEdit3_px->toPlainText().toDouble();
-    double three_py = ui->textEdit3_py->toPlainText().toDouble();
-    m_ini.write("Cal", "WX3", three_wx);
-    m_ini.write("Cal", "WY3", three_wy);
-    m_ini.write("Cal", "PX3", three_px);
-    m_ini.write("Cal", "PY3", three_py);
-
-    //点4
-    double four_wx = ui->textEdit4_wx->toPlainText().toDouble();
-    double four_wy = ui->textEdit4_wy->toPlainText().toDouble();
-    double four_px = ui->textEdit4_px->toPlainText().toDouble();
-    double four_py = ui->textEdit4_py->toPlainText().toDouble();
-    m_ini.write("Cal", "WX4", four_wx);
-    m_ini.write("Cal", "WY4", four_wy);
-    m_ini.write("Cal", "PX4", four_px);
-    m_ini.write("Cal", "PY4", four_py);
-
+    //标定点数据（世界坐标）
+    for(int i=1;i<10;i++)
+    {
+        QString index=QString::number(i);
+        m_ini.write("Cal", "WX"+index, Calibrate_data_X[i]);
+        m_ini.write("Cal", "WY"+index, Calibrate_data_Y[i]);
+    }
     return 0;
 }
 

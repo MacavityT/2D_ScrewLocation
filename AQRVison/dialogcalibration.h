@@ -30,26 +30,10 @@ public:
 
 private slots:
     void on_pushButtonSnapOne_clicked();
+
     void on_pushButtonPicOne_clicked();
 
-
-    void on_pushButton1_stdw_clicked();
-
     void on_pushButtonCalibra_clicked();
-
-    void on_pushButton3_stdw_clicked();
-
-    void on_pushButton2_stdw_clicked();
-
-    void on_pushButton4_stdw_clicked();
-
-    void on_pushButton1_stdp_clicked();
-
-    void on_pushButton2_stdp_clicked();
-
-    void on_pushButton3_stdp_clicked();
-
-    void on_pushButton4_stdp_clicked();
 
     void on_pushButton_StdW_clicked();
 
@@ -58,6 +42,12 @@ private slots:
     void on_pushButton_ShangStd_clicked();
 
     void on_pushButton_Stdpix_clicked();
+
+    void on_PointSelector_activated(int index);
+
+    void on_XCoordinate_textChanged();
+
+    void on_YCoordinate_textChanged();
 
 public:
     int hal_init();
@@ -78,7 +68,10 @@ public:
     Hlong image_width,image_height;
     Hobject m_image;
     basler_cam* p_cam;
-
+    //标定点选择
+    int Calibrate_Point=0;
+    double Calibrate_data_X[10];
+    double Calibrate_data_Y[10];
 };
 
 #endif // DIALOG_H

@@ -506,6 +506,15 @@ void MainWindow::slot_read_data(float screwdriver, float screw, float enable, fl
     Hobject tem_image;
     copy_image(m_image,&tem_image);
     err = image_process(tem_image, (m_ModelID[screwdriver_index])[screw_index],score,pix_x,pix_y);
+    if(-2 == err)
+    {
+        HTuple px = 0.0;
+        HTuple py = 0.0;
+        image_show(m_image,py,px,false);
+        ui->textBrowser->append(error_message+"找到两颗螺丝!\n");
+        emit signal_setupDeviceData(-2.0,-2.0,1.0,NULL,NULL);
+        return;
+    }
     if(0 != err)
     {
         HTuple px = 0.0;
@@ -547,15 +556,25 @@ int MainWindow::image_process(Hobject& Image,Hlong model_id,double score,double&
 
     double dradRange = HTuple(360).Rad()[0].D();
     reduce_domain(Image,m_region,&Image);
-    find_shape_model(Image,  model_id, 0, dradRange , score, 1, 0.5,
+    find_shape_model(Image,  model_id, 0, dradRange , score, 2, 0.5,
                      "least_squares", 5, 0.3, &findRow, &findCol, &findAngle, &findScore);
 
+    if(2 == findRow.Num())
+    {
+        set_color(m_win_id,"red");
+        set_display_font (m_win_id, 20, "mono", "true", "false");
+        disp_message (m_win_id, "Match two screws", "image", 40, 40, "red","true");
+        pix_x = -1.0;
+        pix_y = -1.0;
+
+        return -2;
+    }
     //判断findRow有无
     if(1 != findRow.Num())
     {
         set_color(m_win_id,"red");
         set_display_font (m_win_id, 20, "mono", "true", "false");
-        disp_message (m_win_id, "no match", "image", 40, 40, "red","true");
+        disp_message (m_win_id, "No match", "image", 40, 40, "red","true");
         pix_x = -1.0;
         pix_y = -1.0;
 

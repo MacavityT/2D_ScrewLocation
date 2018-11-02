@@ -75,13 +75,6 @@ int modbus_tcp_server::ini_modbus_server()
                 this, &modbus_tcp_server::handleDeviceError);
         connect(modbusDevice, &QModbusServer::dataWritten,
                 this, &modbus_tcp_server::updateWidgets);//连接数据读取
-
-        //此部分等待添加主界面控件后完善（繁忙模式，处理长信号）
-//        connect(ui->setBusyBox, &QCheckBox::toggled, this, [this](bool toggled) {
-//            if (modbusDevice)
-//                modbusDevice->setValue(QModbusServer::DeviceBusy, toggled ? 0xffff : 0x0000);
-//        });
-//        emit ui->setBusyBox->toggled(ui->setBusyBox->isChecked());
     }
     return 0;
 }

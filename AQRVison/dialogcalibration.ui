@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1024</width>
-    <height>600</height>
+    <height>550</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,11 +17,15 @@
    <property name="geometry">
     <rect>
      <x>0</x>
-     <y>0</y>
+     <y>20</y>
      <width>640</width>
      <height>480</height>
     </rect>
    </property>
+   <zorder>groupBox_2</zorder>
+   <zorder>groupBox_5</zorder>
+   <zorder>groupBox_3</zorder>
+   <zorder>CalibrationCoordinate</zorder>
   </widget>
   <widget class="QPushButton" name="pushButtonSnapOne">
    <property name="geometry">
@@ -65,10 +69,10 @@
   <widget class="QGroupBox" name="groupBox">
    <property name="geometry">
     <rect>
-     <x>0</x>
-     <y>500</y>
-     <width>991</width>
-     <height>71</height>
+     <x>650</x>
+     <y>170</y>
+     <width>361</width>
+     <height>231</height>
     </rect>
    </property>
    <property name="title">
@@ -77,8 +81,8 @@
    <widget class="QPushButton" name="pushButton_StdW">
     <property name="geometry">
      <rect>
-      <x>350</x>
-      <y>30</y>
+      <x>30</x>
+      <y>100</y>
       <width>80</width>
       <height>30</height>
      </rect>
@@ -94,8 +98,8 @@ border-radius:10px;</string>
    <widget class="QTextEdit" name="textEdit_wStdx">
     <property name="geometry">
      <rect>
-      <x>440</x>
-      <y>30</y>
+      <x>140</x>
+      <y>100</y>
       <width>81</width>
       <height>31</height>
      </rect>
@@ -104,8 +108,8 @@ border-radius:10px;</string>
    <widget class="QTextEdit" name="textEdit_wStdy">
     <property name="geometry">
      <rect>
-      <x>530</x>
-      <y>30</y>
+      <x>240</x>
+      <y>100</y>
       <width>81</width>
       <height>31</height>
      </rect>
@@ -114,7 +118,7 @@ border-radius:10px;</string>
    <widget class="QTextEdit" name="textEdit_ShangStdx">
     <property name="geometry">
      <rect>
-      <x>120</x>
+      <x>140</x>
       <y>30</y>
       <width>81</width>
       <height>31</height>
@@ -124,7 +128,7 @@ border-radius:10px;</string>
    <widget class="QTextEdit" name="textEdit_ShangStdy">
     <property name="geometry">
      <rect>
-      <x>210</x>
+      <x>240</x>
       <y>30</y>
       <width>81</width>
       <height>31</height>
@@ -151,8 +155,8 @@ border-radius:10px;</string>
    <widget class="QTextEdit" name="textEdit_pStdy">
     <property name="geometry">
      <rect>
-      <x>840</x>
-      <y>30</y>
+      <x>240</x>
+      <y>170</y>
       <width>81</width>
       <height>31</height>
      </rect>
@@ -161,8 +165,8 @@ border-radius:10px;</string>
    <widget class="QTextEdit" name="textEdit_pStdx">
     <property name="geometry">
      <rect>
-      <x>750</x>
-      <y>30</y>
+      <x>140</x>
+      <y>170</y>
       <width>81</width>
       <height>31</height>
      </rect>
@@ -174,8 +178,8 @@ border-radius:10px;</string>
     </property>
     <property name="geometry">
      <rect>
-      <x>660</x>
-      <y>30</y>
+      <x>30</x>
+      <y>170</y>
       <width>80</width>
       <height>30</height>
      </rect>
@@ -189,349 +193,98 @@ border-radius:10px;</string>
     </property>
    </widget>
   </widget>
-  <widget class="QGroupBox" name="groupBox_2">
+  <widget class="QGroupBox" name="CalibrationCoordinate">
    <property name="geometry">
     <rect>
      <x>650</x>
-     <y>70</y>
-     <width>181</width>
-     <height>151</height>
+     <y>80</y>
+     <width>361</width>
+     <height>81</height>
     </rect>
    </property>
    <property name="title">
-    <string>点1</string>
+    <string>标定点坐标</string>
    </property>
-   <widget class="QPushButton" name="pushButton1_stdw">
+   <widget class="QComboBox" name="PointSelector">
     <property name="geometry">
      <rect>
       <x>20</x>
       <y>30</y>
-      <width>71</width>
+      <width>101</width>
       <height>31</height>
      </rect>
     </property>
     <property name="styleSheet">
      <string notr="true">background-color:rgb(225,225,225);
-border-radius:10px;font: 75 8pt &quot;Aharoni&quot;;</string>
+border-radius:10px;</string>
     </property>
-    <property name="text">
-     <string>获取物理位置</string>
-    </property>
+    <item>
+     <property name="text">
+      <string>请选择标定点</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>标定点1</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>标定点2</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>标定点3</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>标定点4</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>标定点5</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>标定点6</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>标定点7</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>标定点8</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>标定点9</string>
+     </property>
+    </item>
    </widget>
-   <widget class="QTextEdit" name="textEdit1_wx">
+   <widget class="QTextEdit" name="YCoordinate">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>70</y>
-      <width>71</width>
-      <height>31</height>
-     </rect>
-    </property>
-   </widget>
-   <widget class="QTextEdit" name="textEdit1_wy">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>110</y>
-      <width>71</width>
-      <height>31</height>
-     </rect>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="pushButton1_stdp">
-    <property name="geometry">
-     <rect>
-      <x>100</x>
+      <x>240</x>
       <y>30</y>
-      <width>71</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <property name="styleSheet">
-     <string notr="true">background-color:rgb(225,225,225);
-border-radius:10px;font: 75 8pt &quot;Aharoni&quot;;</string>
-    </property>
-    <property name="text">
-     <string>获取图像位置</string>
-    </property>
-   </widget>
-   <widget class="QTextEdit" name="textEdit1_px">
-    <property name="geometry">
-     <rect>
-      <x>100</x>
-      <y>70</y>
-      <width>71</width>
+      <width>81</width>
       <height>31</height>
      </rect>
     </property>
    </widget>
-   <widget class="QTextEdit" name="textEdit1_py">
+   <widget class="QTextEdit" name="XCoordinate">
     <property name="geometry">
      <rect>
-      <x>100</x>
-      <y>110</y>
-      <width>71</width>
-      <height>31</height>
-     </rect>
-    </property>
-   </widget>
-  </widget>
-  <widget class="QGroupBox" name="groupBox_3">
-   <property name="geometry">
-    <rect>
-     <x>830</x>
-     <y>70</y>
-     <width>181</width>
-     <height>151</height>
-    </rect>
-   </property>
-   <property name="title">
-    <string>点2</string>
-   </property>
-   <widget class="QPushButton" name="pushButton2_stdw">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
+      <x>140</x>
       <y>30</y>
-      <width>71</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <property name="styleSheet">
-     <string notr="true">background-color:rgb(225,225,225);
-border-radius:10px;font: 75 8pt &quot;Aharoni&quot;;</string>
-    </property>
-    <property name="text">
-     <string>获取物理位置</string>
-    </property>
-   </widget>
-   <widget class="QTextEdit" name="textEdit2_wx">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>70</y>
-      <width>71</width>
-      <height>31</height>
-     </rect>
-    </property>
-   </widget>
-   <widget class="QTextEdit" name="textEdit2_wy">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>110</y>
-      <width>71</width>
-      <height>31</height>
-     </rect>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="pushButton2_stdp">
-    <property name="geometry">
-     <rect>
-      <x>100</x>
-      <y>30</y>
-      <width>71</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <property name="styleSheet">
-     <string notr="true">background-color:rgb(225,225,225);
-border-radius:10px;font: 75 8pt &quot;Aharoni&quot;;</string>
-    </property>
-    <property name="text">
-     <string>获取图像位置</string>
-    </property>
-   </widget>
-   <widget class="QTextEdit" name="textEdit2_px">
-    <property name="geometry">
-     <rect>
-      <x>100</x>
-      <y>70</y>
-      <width>71</width>
-      <height>31</height>
-     </rect>
-    </property>
-   </widget>
-   <widget class="QTextEdit" name="textEdit2_py">
-    <property name="geometry">
-     <rect>
-      <x>100</x>
-      <y>110</y>
-      <width>71</width>
-      <height>31</height>
-     </rect>
-    </property>
-   </widget>
-  </widget>
-  <widget class="QGroupBox" name="groupBox_4">
-   <property name="geometry">
-    <rect>
-     <x>650</x>
-     <y>250</y>
-     <width>181</width>
-     <height>151</height>
-    </rect>
-   </property>
-   <property name="title">
-    <string>点3</string>
-   </property>
-   <widget class="QPushButton" name="pushButton3_stdw">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>30</y>
-      <width>71</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <property name="styleSheet">
-     <string notr="true">background-color:rgb(225,225,225);
-border-radius:10px;font: 75 8pt &quot;Aharoni&quot;;</string>
-    </property>
-    <property name="text">
-     <string>获取物理位置</string>
-    </property>
-   </widget>
-   <widget class="QTextEdit" name="textEdit3_wx">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>70</y>
-      <width>71</width>
-      <height>31</height>
-     </rect>
-    </property>
-   </widget>
-   <widget class="QTextEdit" name="textEdit3_wy">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>110</y>
-      <width>71</width>
-      <height>31</height>
-     </rect>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="pushButton3_stdp">
-    <property name="geometry">
-     <rect>
-      <x>100</x>
-      <y>30</y>
-      <width>71</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <property name="styleSheet">
-     <string notr="true">background-color:rgb(225,225,225);
-border-radius:10px;font: 75 8pt &quot;Aharoni&quot;;</string>
-    </property>
-    <property name="text">
-     <string>获取图像位置</string>
-    </property>
-   </widget>
-   <widget class="QTextEdit" name="textEdit3_px">
-    <property name="geometry">
-     <rect>
-      <x>100</x>
-      <y>70</y>
-      <width>71</width>
-      <height>31</height>
-     </rect>
-    </property>
-   </widget>
-   <widget class="QTextEdit" name="textEdit3_py">
-    <property name="geometry">
-     <rect>
-      <x>100</x>
-      <y>110</y>
-      <width>71</width>
-      <height>31</height>
-     </rect>
-    </property>
-   </widget>
-  </widget>
-  <widget class="QGroupBox" name="groupBox_5">
-   <property name="geometry">
-    <rect>
-     <x>830</x>
-     <y>250</y>
-     <width>181</width>
-     <height>151</height>
-    </rect>
-   </property>
-   <property name="title">
-    <string>点4</string>
-   </property>
-   <widget class="QPushButton" name="pushButton4_stdw">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>30</y>
-      <width>71</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <property name="styleSheet">
-     <string notr="true">background-color:rgb(225,225,225);
-border-radius:10px;font: 75 8pt &quot;Aharoni&quot;;</string>
-    </property>
-    <property name="text">
-     <string>获取物理位置</string>
-    </property>
-   </widget>
-   <widget class="QTextEdit" name="textEdit4_wx">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>70</y>
-      <width>71</width>
-      <height>31</height>
-     </rect>
-    </property>
-   </widget>
-   <widget class="QTextEdit" name="textEdit4_wy">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>110</y>
-      <width>71</width>
-      <height>31</height>
-     </rect>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="pushButton4_stdp">
-    <property name="geometry">
-     <rect>
-      <x>100</x>
-      <y>30</y>
-      <width>71</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <property name="styleSheet">
-     <string notr="true">background-color:rgb(225,225,225);
-border-radius:10px;font: 75 8pt &quot;Aharoni&quot;;</string>
-    </property>
-    <property name="text">
-     <string>获取图像位置</string>
-    </property>
-   </widget>
-   <widget class="QTextEdit" name="textEdit4_px">
-    <property name="geometry">
-     <rect>
-      <x>100</x>
-      <y>70</y>
-      <width>71</width>
-      <height>31</height>
-     </rect>
-    </property>
-   </widget>
-   <widget class="QTextEdit" name="textEdit4_py">
-    <property name="geometry">
-     <rect>
-      <x>100</x>
-      <y>110</y>
-      <width>71</width>
+      <width>81</width>
       <height>31</height>
      </rect>
     </property>

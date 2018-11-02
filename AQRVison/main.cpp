@@ -16,15 +16,15 @@ int main(int argc, char *argv[])
 
     QApplication app(argc, argv);
     //Show ICON
-    QPixmap pixmap(":AqLogo.PNG");
-    QSplashScreen splash(pixmap);
-    splash.show();
-    app.processEvents();
+//    QPixmap pixmap(":AqLogo.PNG");
+//    QSplashScreen splash(pixmap);
+//    splash.show();
+//    app.processEvents();
     //continue
     MainWindow MainWin;
     MainWin.setWindowTitle("Home");
     MainWin.show();
 
-    splash.finish(&MainWin);
+//    splash.finish(&MainWin);
     return app.exec();
 }
