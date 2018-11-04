@@ -14,6 +14,8 @@
 
 #include "inifile.h"
 
+#define u8 unsigned char
+
 using namespace std;
 
 class modbus_tcp_server:public QObject
@@ -55,6 +57,7 @@ private:
     //Control object
     IniFile m_ini_reader;
     //read&write data
+    u8* Modbus_HoldReg[1000];
     quint16 value;
     QModbusDataUnit m_data;
     QModbusDataUnit read_data;

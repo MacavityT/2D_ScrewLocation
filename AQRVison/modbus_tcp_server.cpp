@@ -4,6 +4,47 @@
 #include <QUrl>
 #include <QDebug>
 
+//究极转换,从float转成quint16
+enum byteOrder{
+        ABCD,
+        BADC,
+        CDAB,
+        DCBA
+    };
+
+quint16 fromCharArray(const unsigned *data)
+{
+    uintptr_t value(0);
+    for(int i(0); i < 2; ++i){
+        value += data[i] << 8 *i;
+    }
+    return value;
+}
+
+QVector<quint16> fromFloat(float abcd, byteOrder order)
+{
+    short A(0),B(0),C(0),D(0);
+    switch (order) {
+    case ABCD:A = 0; B = 1; C = 2; D = 3;break;
+    case BADC:A = 1; B = 0; C = 3; D = 2;break;
+    case CDAB:A = 2; B = 3; C = 0; D = 1;break;
+    case DCBA:A = 3; B = 2; C = 1; D = 0;break;
+    }
+
+    unsigned char *cArray = reinterpret_cast<unsigned char *>(&abcd);
+    unsigned value1[] = {cArray[A],cArray[B]};
+    unsigned value2[] = {cArray[C],cArray[D]};
+
+    QVector<quint16> values;
+    values.append(fromCharArray(value1));
+    values.append(fromCharArray(value2));
+
+    return values;
+}
+
+
+
+
 bool modbus_tcp_server::main_thread_quit=false;
 
 modbus_tcp_server::modbus_tcp_server()
@@ -148,14 +189,9 @@ int modbus_tcp_server::setupDeviceData(float x_coor,float y_coor,\
 //待发送数据转换
 int modbus_tcp_server::float_to_quint(float data,quint16 start_address)
 {
-    int high_bit;
-    int low_bit;
-    int whole;
-    whole=*((int*)&data);
-    high_bit=whole/pow(0x10,4);
-    low_bit=whole-high_bit*pow(0x10,4);
-    write_data.setValue(start_address+1,high_bit);
-    write_data.setValue(start_address,low_bit);
+    QVector<quint16> values=fromFloat(data,ABCD);
+    write_data.setValue(start_address+1,values[1]);
+    write_data.setValue(start_address,values[0]);
 
     return 0;
 }
