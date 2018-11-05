@@ -4,7 +4,7 @@
 #include <QUrl>
 #include <QDebug>
 
-//究极转换,从float转成quint16
+////Byte转换
 enum byteOrder{
         ABCD,
         BADC,
@@ -12,7 +12,34 @@ enum byteOrder{
         DCBA
     };
 
-quint16 fromCharArray(const unsigned *data)
+//数据接收：quint16转float
+float float_fromCharArray(const unsigned* data)
+{
+    float value[];
+    for(int i(0); i < 4; ++i){
+        value[i] = data << 8*i;
+    }
+    return value;
+}
+
+float toFloat(QVector<quint16> abcd,byteOrder order)
+{
+    short A(0),B(0),C(0),D(0);
+    switch (order) {
+    case ABCD:A = 0; B = 1; C = 2; D = 3;break;
+    case BADC:A = 1; B = 0; C = 3; D = 2;break;
+    case CDAB:A = 2; B = 3; C = 0; D = 1;break;
+    case DCBA:A = 3; B = 2; C = 1; D = 0;break;
+    }
+
+    unsigned char *cArray = reinterpret_cast<unsigned char *>(&abcd);
+    unsigned value[] = {cArray[A],cArray[B],cArray[C],cArray[D]};
+
+    return float_fromCharArray(value);
+}
+
+//数据发送：float转quint16
+quint16 quint_fromCharArray(const unsigned *data)
 {
     uintptr_t value(0);
     for(int i(0); i < 2; ++i){
@@ -36,8 +63,8 @@ QVector<quint16> fromFloat(float abcd, byteOrder order)
     unsigned value2[] = {cArray[C],cArray[D]};
 
     QVector<quint16> values;
-    values.append(fromCharArray(value1));
-    values.append(fromCharArray(value2));
+    values.append(quint_fromCharArray(value1));
+    values.append(quint_fromCharArray(value2));
 
     return values;
 }
