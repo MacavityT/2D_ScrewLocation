@@ -57,7 +57,6 @@ private:
     //Control object
     IniFile m_ini_reader;
     //read&write data
-    u8* Modbus_HoldReg[1000];
     quint16 value;
     QModbusDataUnit m_data;
     QModbusDataUnit read_data;

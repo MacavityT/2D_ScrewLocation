@@ -367,7 +367,6 @@ void MainWindow::on_pushButton_Start_clicked()
 //按钮：测试
 void MainWindow::on_pushButton_TestItem_clicked()
 {
-    emit signal_setupDeviceData(-0.707,-66.434,1.0,NULL,NULL);
 }
 
 //按钮：连接或断开PLC
@@ -540,8 +539,6 @@ void MainWindow::slot_read_data(float screwdriver, float screw, float enable, fl
     x_coor=offset_x;
     y_coor=offset_y;
     emit signal_setupDeviceData(x_coor,y_coor,1.0,NULL,NULL);
-
-    m_log.write_log("Calculate number"+key);
     //显示当前图片
     HTuple px = HTuple(pix_x);
     HTuple py = HTuple(pix_y);
