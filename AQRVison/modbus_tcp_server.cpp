@@ -13,16 +13,6 @@ enum byteOrder{
     };
 
 //数据接收：quint16转float
-float toCharArray(unsigned char * data)
-{
-    float value(0.0);
-//    for(int i(2); i < 4; ++i){
-//        value = data[i] << 8*i;
-//    }
-    value=data[0]+data[1]+(data[2]<<4*8)+(data[3]<<3*8);
-    return value;
-}
-
 float toFloat(QVector<quint16> abcd,byteOrder order)
 {
     short A(0),B(0),C(0),D(0);
@@ -36,12 +26,9 @@ float toFloat(QVector<quint16> abcd,byteOrder order)
     unsigned char *cArray1 = reinterpret_cast<unsigned char *>(&abcd[0]);
     unsigned char *cArray2 = reinterpret_cast<unsigned char *>(&abcd[1]);
     unsigned char cArray[] = {cArray1[0],cArray1[1],cArray2[0],cArray2[1]};
-    float value=toCharArray(cArray);
 
-    unsigned value1[] = {cArray[A],cArray[B]};
-    unsigned value2[] = {cArray[C],cArray[D]};
-
-    return 1;
+    float value = *((float*)cArray);
+    return value;
 }
 
 //数据发送：float转quint16
