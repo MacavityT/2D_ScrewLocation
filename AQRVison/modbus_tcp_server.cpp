@@ -13,12 +13,13 @@ enum byteOrder{
     };
 
 //数据接收：quint16转float
-float float_fromCharArray(const unsigned* data)
+float toCharArray(unsigned char * data)
 {
-    float value[];
-    for(int i(0); i < 4; ++i){
-        value[i] = data << 8*i;
-    }
+    float value(0.0);
+//    for(int i(2); i < 4; ++i){
+//        value = data[i] << 8*i;
+//    }
+    value=data[0]+data[1]+(data[2]<<4*8)+(data[3]<<3*8);
     return value;
 }
 
@@ -32,14 +33,19 @@ float toFloat(QVector<quint16> abcd,byteOrder order)
     case DCBA:A = 3; B = 2; C = 1; D = 0;break;
     }
 
-    unsigned char *cArray = reinterpret_cast<unsigned char *>(&abcd);
-    unsigned value[] = {cArray[A],cArray[B],cArray[C],cArray[D]};
+    unsigned char *cArray1 = reinterpret_cast<unsigned char *>(&abcd[0]);
+    unsigned char *cArray2 = reinterpret_cast<unsigned char *>(&abcd[1]);
+    unsigned char cArray[] = {cArray1[0],cArray1[1],cArray2[0],cArray2[1]};
+    float value=toCharArray(cArray);
 
-    return float_fromCharArray(value);
+    unsigned value1[] = {cArray[A],cArray[B]};
+    unsigned value2[] = {cArray[C],cArray[D]};
+
+    return 1;
 }
 
 //数据发送：float转quint16
-quint16 quint_fromCharArray(const unsigned *data)
+quint16 fromCharArray(const unsigned *data)
 {
     uintptr_t value(0);
     for(int i(0); i < 2; ++i){
@@ -63,8 +69,8 @@ QVector<quint16> fromFloat(float abcd, byteOrder order)
     unsigned value2[] = {cArray[C],cArray[D]};
 
     QVector<quint16> values;
-    values.append(quint_fromCharArray(value1));
-    values.append(quint_fromCharArray(value2));
+    values.append(fromCharArray(value1));
+    values.append(fromCharArray(value2));
 
     return values;
 }
@@ -171,11 +177,23 @@ void modbus_tcp_server::updateWidgets(QModbusDataUnit::RegisterType table, int a
     if(address<20)
         return;
     modbusDevice->data(&read_data);
-    float screwdriver=quint_to_float(read_data.value(0),read_data.value(1));
-    float screw=quint_to_float(read_data.value(2),read_data.value(3));
-    float enable=quint_to_float(read_data.value(4),read_data.value(5));
-    float receive=quint_to_float(read_data.value(6),read_data.value(7));
-    float reserve=quint_to_float(read_data.value(8),read_data.value(9));
+    QVector<QVector<quint16>> data_array;
+    QVector<quint16> data;
+    for(int i(0);i<5;i++)
+    {
+        for(int j(0);j<2;j++)
+        {
+            data.push_back(read_data.value(2*i+j));
+        }
+        data_array.append(data);
+//        data_array.push_back(data);
+        data.clear();
+    }
+    float screwdriver=quint_to_float(data_array[0],0);
+    float screw=quint_to_float(data_array[1],2);
+    float enable=quint_to_float(data_array[2],4);
+    float receive=quint_to_float(data_array[3],6);
+    float reserve=quint_to_float(data_array[4],8);
     if(receive==1.0)
         setupDeviceData(0,0,0,0,0);
     //触发检测函数
@@ -184,16 +202,11 @@ void modbus_tcp_server::updateWidgets(QModbusDataUnit::RegisterType table, int a
 }
 
 //接收数据转换
-float modbus_tcp_server::quint_to_float(quint16 AB,quint16 CD)
+float modbus_tcp_server::quint_to_float(QVector<quint16> data, quint16 start_address)
 {
-    float data;
-    int high_bit=CD;
-    int low_bit=AB;
-    int whole;
-    whole=high_bit*pow(0x10,4)+low_bit;
-    data=*((float*)&whole);//内存格式转换
-
-    return data;
+    float new_data=toFloat(data,ABCD);
+    qDebug()<<new_data;
+    return new_data;
 }
 
 //发送数据
