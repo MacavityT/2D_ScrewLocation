@@ -15,10 +15,10 @@ enum byteOrder{
 //数据接收：quint16转float
 float float_fromCharArray(const unsigned* data)
 {
-    float value[];
-    for(int i(0); i < 4; ++i){
-        value[i] = data << 8*i;
-    }
+    float value;
+//    for(int i(0); i < 4; ++i){
+//        value = data << 8*i;
+//    }
     return value;
 }
 
