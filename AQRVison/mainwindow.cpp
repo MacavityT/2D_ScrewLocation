@@ -513,6 +513,10 @@ void MainWindow::slot_read_data(float screwdriver, float screw, float enable, fl
         image_show(m_image,py,px,false);
         ui->textBrowser->append(error_message+"找到两颗螺丝!\n");
         emit signal_setupDeviceData(-2.0,-2.0,1.0,NULL,NULL);
+        //图像-原图保存-处理后截图保存
+        image_save(m_image,m_SaveRaw,m_SaveResult);
+        //写入时间及坐标
+        m_data_file_csv.data_write(pix_x,pix_y,m_SaveData);
         return;
     }
     if(0 != err)
@@ -522,6 +526,10 @@ void MainWindow::slot_read_data(float screwdriver, float screw, float enable, fl
         image_show(m_image,py,px,false);
         ui->textBrowser->append(error_message+"定位螺丝失败!\n");
         emit signal_setupDeviceData(-1.0,-1.0,1.0,NULL,NULL);
+        //图像-原图保存-处理后截图保存
+        image_save(m_image,m_SaveRaw,m_SaveResult);
+        //写入时间及坐标
+        m_data_file_csv.data_write(pix_x,pix_y,m_SaveData);
         return;
     }
 
@@ -533,6 +541,10 @@ void MainWindow::slot_read_data(float screwdriver, float screw, float enable, fl
         image_show(m_image,py,px,false);
         ui->textBrowser->append(error_message+"cal_offset失败!!\n");
         emit signal_setupDeviceData(-1.0,-1.0,1.0,NULL,NULL);
+        //图像-原图保存-处理后截图保存
+        image_save(m_image,m_SaveRaw,m_SaveResult);
+        //写入时间及坐标
+        m_data_file_csv.data_write(pix_x,pix_y,m_SaveData);
         return;
     }
     //结果发送   
