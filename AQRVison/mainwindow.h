@@ -92,8 +92,8 @@ public:
     HTuple HomMat2D;
     //模板ID：不存在的模板设置为-1
     map<int, map<int, Hlong>> m_ModelID;
-    int m_model_type;
-    int m_model_index;
+    //双螺丝标志
+    int DoubleScrew[4][30];
 
     //文件打开处理
     int file_image_to_process();
@@ -104,9 +104,11 @@ public:
     int hal_read_shape_model();
     int cal_data_ini_read();
     //图像处理
-    int image_process(Hobject& Image, Hlong model_id, double score, double& pix_x, double& pix_y);
+    int image_process(Hobject& Image, Hlong model_id, double score, double& pix_x, double& pix_y);//单颗螺丝
+    int image_process2(Hobject& Image, Hlong model_id, double score, HTuple& pix_x, HTuple& pix_y);//两颗螺丝
     int cal_offset(double x,double y,double &world_offset_x, double &world_offset_y);
     float x_coor,y_coor;//偏移量结果，如果未识别到则结果不变
+    double findx_delay=0,findy_delay=0;//延迟发送，当识别两颗螺丝时，第二个图像位置暂时保存，等待下一次使能时计算偏移量
     //处理后显示
     int image_show(Hobject& Image,HTuple& findRow,HTuple& findCol,bool bState);
 

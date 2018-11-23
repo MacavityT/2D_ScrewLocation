@@ -194,6 +194,9 @@ int MainWindow::hal_read_shape_model()
                     screw_num_start=true;
                 }
             }
+            //读取双螺丝标志位
+            memset(&DoubleScrew,0,sizeof(int)*4*30);
+            m_ini.read("DoubleScrew",template_name,DoubleScrew[screw_driver_index.toInt()-1][screw_index.toInt()-1]);
             //读取模板
             Hlong modelID;
             try
@@ -213,7 +216,7 @@ int MainWindow::hal_read_shape_model()
         {
             continue;
         }
-    }
+    } 
     return 0;
 }
 
@@ -505,32 +508,55 @@ void MainWindow::slot_read_data(float screwdriver, float screw, float enable, fl
     int err = 0;
     Hobject tem_image;
     copy_image(m_image,&tem_image);
-    err = image_process(tem_image, (m_ModelID[screwdriver_index])[screw_index],score,pix_x,pix_y);
-    if(-2 == err)
+    if(DoubleScrew[screwdriver_index-1][screw_index-1]==0)
     {
-        HTuple px = 0.0;
-        HTuple py = 0.0;
-        image_show(m_image,py,px,false);
-        ui->textBrowser->append(error_message+"找到两颗螺丝!\n");
-        emit signal_setupDeviceData(-2.0,-2.0,1.0,NULL,NULL);
-        //图像-原图保存-处理后截图保存
-        image_save(m_image,m_SaveRaw,m_SaveResult);
-        //写入时间及坐标
-        m_data_file_csv.data_write(pix_x,pix_y,m_SaveData);
-        return;
+        err = image_process(tem_image, (m_ModelID[screwdriver_index])[screw_index],score,pix_x,pix_y);
+        if(0 != err)
+        {
+            HTuple px = 0.0;
+            HTuple py = 0.0;
+            image_show(m_image,py,px,false);
+            ui->textBrowser->append(error_message+"定位螺丝失败!\n");
+            emit signal_setupDeviceData(-1.0,-1.0,1.0,NULL,NULL);
+            //图像-原图保存-处理后截图保存
+            image_save(m_image,m_SaveRaw,m_SaveResult);
+            //写入时间及坐标
+            m_data_file_csv.data_write(pix_x,pix_y,m_SaveData);
+            return;
+        }
     }
-    if(0 != err)
+    else if(findx_delay*findy_delay!=0)
     {
-        HTuple px = 0.0;
-        HTuple py = 0.0;
-        image_show(m_image,py,px,false);
-        ui->textBrowser->append(error_message+"定位螺丝失败!\n");
-        emit signal_setupDeviceData(-1.0,-1.0,1.0,NULL,NULL);
-        //图像-原图保存-处理后截图保存
-        image_save(m_image,m_SaveRaw,m_SaveResult);
-        //写入时间及坐标
-        m_data_file_csv.data_write(pix_x,pix_y,m_SaveData);
-        return;
+        pix_x=findx_delay;
+        pix_y=findy_delay;
+        findx_delay=0;
+        findy_delay=0;
+    }
+    else
+    {
+        HTuple findx,findy;
+        err = image_process2(tem_image, (m_ModelID[screwdriver_index])[screw_index],score,findx,findy);
+        if(0 != err)
+        {
+            err = image_process2(tem_image, (m_ModelID[screwdriver_index])[screw_index+1],score-0.1,findx,findy);
+            if(0 != err)
+            {
+                HTuple px = 0.0;
+                HTuple py = 0.0;
+                image_show(m_image,py,px,false);
+                ui->textBrowser->append(error_message+"定位螺丝(双螺丝)失败!\n");
+                emit signal_setupDeviceData(-1.0,-1.0,1.0,NULL,NULL);
+                //图像-原图保存-处理后截图保存
+                image_save(m_image,m_SaveRaw,m_SaveResult);
+                //写入时间及坐标
+                m_data_file_csv.data_write(pix_x,pix_y,m_SaveData);
+                return;
+            }
+        }
+        pix_x=findx[0].D();
+        pix_y=findy[0].D();
+        findx_delay=findx[1].D();
+        findy_delay=findy[1].D();
     }
 
     err = cal_offset(pix_x,pix_y,offset_x,offset_y);//返回的offset值为当前识别物理位置与记录的标准上螺丝物理位置的偏移量
@@ -568,36 +594,37 @@ int MainWindow::image_process(Hobject& Image,Hlong model_id,double score,double&
 
     double dradRange = HTuple(360).Rad()[0].D();
     reduce_domain(Image,m_region,&Image);
-    find_shape_model(Image,  model_id, 0, dradRange , score, 2, 0.5,
+    find_shape_model(Image,  model_id, 0, dradRange , score, 1, 0.5,
                      "least_squares", 5, 0.3, &findRow, &findCol, &findAngle, &findScore);
 
-    if(2 == findRow.Num())
-    {
-        set_color(m_win_id,"red");
-        set_display_font (m_win_id, 20, "mono", "true", "false");
-        disp_message (m_win_id, "Match two screws", "image", 40, 40, "red","true");
-        pix_x = -1.0;
-        pix_y = -1.0;
-
-        return -2;
-    }
     //判断findRow有无
     if(1 != findRow.Num())
-    {
-        set_color(m_win_id,"red");
-        set_display_font (m_win_id, 20, "mono", "true", "false");
-        disp_message (m_win_id, "No match", "image", 40, 40, "red","true");
-        pix_x = -1.0;
-        pix_y = -1.0;
-
         return -1;
-    }
 
     pix_x = findCol[0].D();
     pix_y = findRow[0].D();
 
     return 0;
 }
+
+int MainWindow::image_process2(Hobject& Image,Hlong model_id,double score,HTuple& pix_x,HTuple& pix_y)
+{
+    HTuple findRow,findCol,findAngle,findScore;
+
+    double dradRange = HTuple(360).Rad()[0].D();
+    find_shape_model(Image,  model_id, 0, dradRange , score, 2, 0.5,
+                     "least_squares", 5, 0.3, &findRow, &findCol, &findAngle, &findScore);
+
+    //判断findRow有无
+    if(2 != findRow.Num())
+        return -1;
+
+    pix_x = findCol;
+    pix_y = findRow;
+
+    return 0;
+}
+
 
 //计算偏移量
 int MainWindow::cal_offset(double x,double y,double &world_offset_x, double &world_offset_y)

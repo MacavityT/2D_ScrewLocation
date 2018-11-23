@@ -433,6 +433,11 @@ int DialogShapeModel::ClickButtonCreateShapeModel()
     {
         return -1;
     }
+    //保存多螺丝信息
+    if(ui->checkBox_DoubleScrew->isChecked())
+    {
+        m_ini.write("DoubleScrew",m_fileName,1);
+    }
     print_qmess(QString("succeed!"));//结果显示
     //刷新list
     strList.append("match-" + m_fileName + ".shm");
