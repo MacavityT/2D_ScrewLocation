@@ -47,14 +47,14 @@ FORMS    += mainwindow.ui \
 
 INCLUDEPATH += "D:/Program Files/MVTec/HALCON-13.0/include/"
 
-INCLUDEPATH += "D:/Program Files/Basler/pylon 5/Development/include/"
+INCLUDEPATH += "D:/Program Files/Basler/Development/include/"
 
 LIBS        += -L$$quote(D:\Program Files\MVTec\HALCON-13.0\lib\x64-win64) \
                -lhalcon \
                -lhalconcpp10 \
                -lhalconcpp
 
-LIBS        += -L$$quote(D:\Program Files\Basler\pylon 5\Development\lib\x64) \
+LIBS        += -L$$quote(D:\Program Files\Basler\Development\lib\x64) \
 
 RESOURCES += aqlogo.qrc
 
