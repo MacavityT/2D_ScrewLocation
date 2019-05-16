@@ -93,6 +93,10 @@ public:
     //模板ID：不存在的模板设置为-1
     map<int, map<int, Hlong>> m_ModelID;
     map<int,Hlong> m_mark_ModelID;
+    //运行计算
+    HTuple HomMat2DRunTime;
+    HTuple mark_x_1,mark_y_1;
+    HTuple mark_x_2,mark_y_2;
     //双螺丝标志
     int DoubleScrew[4][30];
 
@@ -106,6 +110,8 @@ public:
     int hal_read_mark_shape_model();
     int cal_data_ini_read();
     //图像处理
+    void screw_process(int screwdriver,int screw,float xcoor,float ycoor);
+    void mark_process(int mark,float xcoor,float ycoor);
     int image_process(Hobject& Image, Hlong model_id, double score, double& pix_x, double& pix_y);//单颗螺丝
     int image_process2(Hobject& Image, Hlong model_id, double score, HTuple& pix_x, HTuple& pix_y);//两颗螺丝
     int cal_offset(double x,double y,double &world_offset_x, double &world_offset_y);
