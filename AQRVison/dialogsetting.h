@@ -27,7 +27,7 @@ private:
 signals:
     void signal_setupDeviceData(float,float,float,float,float);
 public slots:
-    void slot_read_data(float,float,float,float,float);
+    void slot_read_data(float,float,float,float,float,float,float);
 
 private slots:
     void on_TcpAddress_textChanged(const QString &arg1);

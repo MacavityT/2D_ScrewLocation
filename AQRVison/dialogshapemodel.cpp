@@ -135,6 +135,7 @@ int DialogShapeModel::start_param_init()
     gen_empty_obj(&m_image);
     //field init
     m_fileName = "";
+    m_mark_fileName="";
     index_delete = -1;
     m_path_exe = QCoreApplication::applicationDirPath();
     standardItemModel = new QStandardItemModel(this);
@@ -149,10 +150,14 @@ int DialogShapeModel::start_param_init()
     {
         QFileInfo fileInfo = list.at(i);
         QString pattern("^match-\\d+\\_+\\d+\\.shm$");
+        QString mark_pattern("^mark-\\d+\\.shm$");
         QRegExp rx(pattern);
-        bool res = rx.exactMatch(fileInfo.fileName());
+        QRegExp mark_rx(mark_pattern);
 
-        if (res)
+        bool res = rx.exactMatch(fileInfo.fileName());
+        bool mark_res=mark_rx.exactMatch(fileInfo.fileName());
+
+        if (res||mark_res)
         {
             strList.append(fileInfo.fileName());
         }
@@ -429,7 +434,7 @@ int DialogShapeModel::ClickButtonCreateShapeModel()
         return -1;
     }
     //保存模板及图像
-    if (0 != save_templa_image())
+    if (0 != save_templa_image(false))
     {
         return -1;
     }
@@ -446,6 +451,56 @@ int DialogShapeModel::ClickButtonCreateShapeModel()
 
     return 0;
 }
+
+//创建mark点模板
+void DialogShapeModel::on_combo_mark_Index_activated(int index)
+{
+    m_mark_fileName.setNum(index);
+}
+
+void DialogShapeModel::on_combo_mark_Score_activated(const QString &arg1)
+{
+    if(arg1=="相似度(默认0.5)")
+        return;
+    QString score=arg1;
+    m_ini.write("Mark_Model_Score",m_mark_fileName,score);
+    mark_model_score=score.toDouble();
+}
+
+void DialogShapeModel::on_pushButton_mark_confirm_clicked()
+{
+    //开始绘画模板,完成创建后保存按钮使能
+    if(0==draw_show())
+    {
+        //更改模板分数
+        m_ini.write("Mark_Model_Score",m_mark_fileName,mark_model_score);
+        //保存使能
+        ui->pushButtonCreateShapeModelMark->setEnabled(true);
+    }
+}
+
+void DialogShapeModel::on_pushButtonCreateShapeModelMark_clicked()
+{
+    //判断是否已经为模板命名
+    if (m_mark_fileName.isEmpty())
+    {
+        print_qmess(QString("请选择mark点编号！"));
+        return;
+    }
+    //保存模板及图像
+    if (0 != save_templa_image(true))
+    {
+        return;
+    }
+    print_qmess(QString("succeed!"));//结果显示
+    //刷新list
+    strList.append("mark-" + m_mark_fileName + ".shm");
+    refresh_list();
+    ui->pushButtonCreateShapeModel->setEnabled(false);
+
+    return;
+}
+
 
 //模板创建过程与显示
 int DialogShapeModel::draw_show()
@@ -488,7 +543,7 @@ int DialogShapeModel::draw_show()
 }
 
 //模板创建后的处理，包括保存模板及对应的图片
-int DialogShapeModel::save_templa_image()
+int DialogShapeModel::save_templa_image(bool isMark)
 {
 	//读取文件夹
     QDir dir1(m_path_exe + "/matchImage/");
@@ -516,7 +571,15 @@ int DialogShapeModel::save_templa_image()
         }
     }
     //保存模板
-    QString qdstr = m_path_exe + QString("/match/match-" + m_fileName + ".shm");
+    QString qdstr;
+    if(isMark)
+    {
+        qdstr = m_path_exe + QString("/match/mark-" + m_mark_fileName + ".shm");
+    }
+    else
+    {
+        qdstr = m_path_exe + QString("/match/match-" + m_fileName + ".shm");
+    }
     QByteArray ba = qdstr.toLocal8Bit();
     char* ch = ba.data();
 
@@ -531,8 +594,14 @@ int DialogShapeModel::save_templa_image()
     }
 
     //保存图片
-
-    qdstr = m_path_exe + QString("/matchImage/" + m_fileName + ".bmp");
+    if(isMark)
+    {
+        qdstr = m_path_exe + QString("/matchImage/" + m_mark_fileName + ".bmp");
+    }
+    else
+    {
+        qdstr = m_path_exe + QString("/matchImage/" + m_fileName + ".bmp");
+    }
     ba = qdstr.toLocal8Bit();
     ch = ba.data();
 
@@ -594,6 +663,7 @@ void DialogShapeModel::deleteFile()
             }
         }
         standardItemModel->removeRow(index_delete);
+        ui->listView->setModel(standardItemModel);
     }
     index_delete = -1;
     ui->pushButton_delete->setEnabled(false);
@@ -615,7 +685,7 @@ void DialogShapeModel::on_listView_doubleClicked(const QModelIndex &index)
     index_delete = index.row();
     QModelIndex m_index = standardItemModel->index(index_delete, 0);
     QString template_name = m_index.data().toString();
-    QString image_name = template_name.replace("match-", "").replace(".shm", "");
+    QString image_name = template_name.replace("match-", "").replace("mark-","").replace(".shm", "");
     QString qdstr = m_path_exe + QString("/matchImage/" + image_name + ".bmp");
     QByteArray ba = qdstr.toLocal8Bit();
     char* ch = ba.data();
@@ -650,7 +720,6 @@ void DialogShapeModel::refresh_list()
         standardItemModel->appendRow(item);
     }
     ui->listView->setModel(standardItemModel);
-
 }
 
 //QMessage打印
@@ -690,40 +759,67 @@ void DialogShapeModel::on_pushButton_Test_clicked()
         print_qmess(QString("读取模板失败"));
         return;
     }
+
     ////获取目标模板相似度
-    //获取批头号及螺丝编号
-    QString index_name = template_name.replace("match-", "").replace(".shm", "");
-    QByteArray trans2=index_name.toLatin1();
-    char* split_name=trans2.data();
-    bool screw_num_start=false;
-    QString screw_driver_index="";
-    QString screw_index="";
-    for(split_name;*split_name!='\0';split_name++)
-    {
-        if(screw_num_start)
-        {
-            //螺丝编号
-            screw_index+=*split_name;
-        }
-        if(*split_name!='_'&&!screw_num_start)
-        {
-            //批头型号
-            screw_driver_index+=*split_name;
-        }
-        else
-        {
-            screw_num_start=true;
-        }
-    }
-    //获取模板分数
     double score;
-    m_ini.read("Model_Score",screw_driver_index+'_'+screw_index,score);
+    //获取批头号及螺丝编号
+    if(template_name.contains("match"))
+    {
+        QString index_name = template_name.replace("match-", "").replace(".shm", "");
+        QByteArray trans2=index_name.toLatin1();
+        char* split_name=trans2.data();
+        bool screw_num_start=false;
+        QString screw_driver_index="";
+        QString screw_index="";
+        for(split_name;*split_name!='\0';split_name++)
+        {
+            if(screw_num_start)
+            {
+                //螺丝编号
+                screw_index+=*split_name;
+            }
+            if(*split_name!='_'&&!screw_num_start)
+            {
+                //批头型号
+                screw_driver_index+=*split_name;
+            }
+            else
+            {
+                screw_num_start=true;
+            }
+        }
+
+        m_ini.read("Model_Score",screw_driver_index+'_'+screw_index,score);
+    }
+    else
+    {
+        QString index_name = template_name.replace("mark-", "").replace(".shm", "");
+        m_ini.read("Model_Score",index_name,score);
+    }
+    if(score==0)
+    {
+        score=0.5;
+    }
+
+    //加载检测区域
+    QString qdstr = m_path_exe + QString("/region/DetectionRegion.hobj");
+    QFile qfile1(qdstr);
+    if(false == qfile1.exists())
+    {
+        DialogShapeModel::print_qmess(QString("cann't find detection region file!"));
+        return;
+    }
+    QByteArray ba1 = qdstr.toLocal8Bit();
+    char* ch1 = ba1.data();
+    read_region(&m_modelRegion,ch1);
 
     //查找模板
+    Hobject image;
     HTuple findRow,findCol,findAngle,findScore;
     double dradRange = HTuple(360).Rad()[0].D();
     try
     {
+        reduce_domain(m_image,m_modelRegion,&image);
         find_shape_model(m_image,  test_modelID, 0, dradRange , score, 1, 0.5,
                          "least_squares", 3, 0.9, &findRow, &findCol, &findAngle, &findScore);
     }

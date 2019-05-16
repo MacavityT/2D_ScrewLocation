@@ -30,13 +30,13 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionShapeModel, SIGNAL(triggered()), this, SLOT(on_menuShapeModel()));
     //连接主流程与通信类
     connect(&m_modbus,SIGNAL(signal_connect_button_status(bool)),this,SLOT(slot_connect_button_status(bool)));
-    connect(&m_modbus,SIGNAL(signal_read_data(float,float,float,float,float)),\
-            this,SLOT(slot_read_data(float,float,float,float,float)));
+    connect(&m_modbus,SIGNAL(signal_read_data(float,float,float,float,float,float,float)),\
+            this,SLOT(slot_read_data(float,float,float,float,float,float,float)));
     connect(this,SIGNAL(signal_setupDeviceData(float,float,float,float,float)),\
             &m_modbus,SLOT(setupDeviceData(float,float,float,float,float)));
     //连接调试界面与通信类
-    connect(&m_modbus,SIGNAL(signal_read_data(float,float,float,float,float)),\
-            &m_setting_dialog,SLOT(slot_read_data(float,float,float,float,float)));
+    connect(&m_modbus,SIGNAL(signal_read_data(float,float,float,float,float,float,float)),\
+            &m_setting_dialog,SLOT(slot_read_data(float,float,float,float,float,float,float)));
     connect(&m_setting_dialog,SIGNAL(signal_setupDeviceData(float,float,float,float,float)),\
             &m_modbus,SLOT(setupDeviceData(float,float,float,float,float)));
     //心跳连接，由主线程启动，副线程中调用modbus类函数
@@ -217,6 +217,57 @@ int MainWindow::hal_read_shape_model()
             continue;
         }
     } 
+    return 0;
+}
+
+int MainWindow::hal_read_mark_shape_model()
+{
+    //读取文件夹
+    QDir dir(m_path_exe + "/match/");
+    dir.setFilter(QDir::Files | QDir::NoSymLinks);
+    QFileInfoList list = dir.entryInfoList();
+    //判断文件夹是否存在，不存在则创建
+    if (false == dir.exists())
+    {
+        bool is_mkdir = dir.mkdir(m_path_exe + "/match/");
+        if (false == is_mkdir)
+        {
+            m_log.write_log("MainWindow::hal_read_mark_shape_model():the match folder mkdir fail!");
+            return -1;
+        }
+    }
+    //读取模板并保存至Map，保存过程中将“mark-”字符替换为空字符，并将剩余数字作为Map index
+    for (int i = 0; i < list.size(); ++i)
+    {
+        //正则表达式检测文件
+        QFileInfo fileInfo = list.at(i);
+        QString pattern("^mark-\\d+\\.shm$");
+        QRegExp rx(pattern);
+        bool res = rx.exactMatch(fileInfo.fileName());
+        if (res)
+        {
+            //拆解模板名，得到map映射关系
+            QString template_name = fileInfo.fileName().replace("mark-", "").replace(".shm", "");
+            //读取模板
+            Hlong modelID;
+            try
+            {
+                read_shape_model(qPrintable(fileInfo.filePath()), &modelID);
+            }
+            catch (HException &except)
+            {
+                cerr<<except.err;
+                m_log.write_log("MainWindow::hal_read_mark_shape_model(): read_shape_model error!");
+                return -2;
+            }
+            //模板对应
+            m_mark_ModelID[template_name.toInt()] = modelID;
+        }
+        else
+        {
+            continue;
+        }
+    }
     return 0;
 }
 
@@ -459,7 +510,7 @@ void MainWindow::slot_connect_button_status(bool connected)
     }
 }
 //接收数据,由modbus类中的回调函数收到数据后发送到此处
-void MainWindow::slot_read_data(float screwdriver, float screw, float enable, float receive, float reserve)
+void MainWindow::slot_read_data(float screwdriver, float screw, float enable, float receive, float mark, float xcoor, float ycoor)
 {
     if(!Runtime)
         return;//程序未运行，接收数据不处理
@@ -495,7 +546,7 @@ void MainWindow::slot_read_data(float screwdriver, float screw, float enable, fl
     double offset_x = 0.0;
     double offset_y = 0.0;
 
-
+    //Get find model score
     double score=0;
     QString driver_trans,screw_trans;
     driver_trans.setNum(screwdriver_index);

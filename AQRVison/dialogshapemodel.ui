@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1024</width>
-    <height>600</height>
+    <height>657</height>
    </rect>
   </property>
   <property name="font">
@@ -82,7 +82,7 @@
      <x>730</x>
      <y>281</y>
      <width>241</width>
-     <height>171</height>
+     <height>321</height>
     </rect>
    </property>
   </widget>
@@ -93,7 +93,7 @@
    <property name="geometry">
     <rect>
      <x>740</x>
-     <y>470</y>
+     <y>610</y>
      <width>80</width>
      <height>30</height>
     </rect>
@@ -109,7 +109,7 @@
    <property name="geometry">
     <rect>
      <x>880</x>
-     <y>470</y>
+     <y>610</y>
      <width>80</width>
      <height>30</height>
     </rect>
@@ -548,6 +548,164 @@ border-radius:10px;</string>
    <property name="text">
     <string>清空窗口</string>
    </property>
+  </widget>
+  <widget class="QGroupBox" name="groupBox_3">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>580</y>
+     <width>451</width>
+     <height>71</height>
+    </rect>
+   </property>
+   <property name="title">
+    <string>选择mark点编号</string>
+   </property>
+   <widget class="QComboBox" name="combo_mark_Index">
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>20</y>
+      <width>80</width>
+      <height>30</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color:rgb(225,225,225);
+border-radius:10px;</string>
+    </property>
+    <item>
+     <property name="text">
+      <string>Mark点</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>1</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>2</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>3</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>4</string>
+     </property>
+    </item>
+   </widget>
+   <widget class="QPushButton" name="pushButton_mark_confirm">
+    <property name="geometry">
+     <rect>
+      <x>270</x>
+      <y>20</y>
+      <width>80</width>
+      <height>30</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color:rgb(225,225,225);
+border-radius:10px;</string>
+    </property>
+    <property name="text">
+     <string>创建模板</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="pushButtonCreateShapeModelMark">
+    <property name="geometry">
+     <rect>
+      <x>360</x>
+      <y>20</y>
+      <width>80</width>
+      <height>30</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color:rgb(225,225,225);
+border-radius:10px;</string>
+    </property>
+    <property name="text">
+     <string>保存模板</string>
+    </property>
+   </widget>
+   <widget class="QComboBox" name="combo_mark_Score">
+    <property name="geometry">
+     <rect>
+      <x>130</x>
+      <y>20</y>
+      <width>121</width>
+      <height>30</height>
+     </rect>
+    </property>
+    <property name="layoutDirection">
+     <enum>Qt::LeftToRight</enum>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color:rgb(225,225,225);
+border-radius:10px;</string>
+    </property>
+    <item>
+     <property name="text">
+      <string>相似度(默认0.5)</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>0.1</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>0.2</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>0.3</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>0.4</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>0.5</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>0.6</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>0.7</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>0.8</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>0.9</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>1.0</string>
+     </property>
+    </item>
+   </widget>
   </widget>
  </widget>
  <resources/>

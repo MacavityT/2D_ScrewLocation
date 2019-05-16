@@ -92,6 +92,7 @@ public:
     HTuple HomMat2D;
     //模板ID：不存在的模板设置为-1
     map<int, map<int, Hlong>> m_ModelID;
+    map<int,Hlong> m_mark_ModelID;
     //双螺丝标志
     int DoubleScrew[4][30];
 
@@ -102,6 +103,7 @@ public:
     int start_varia_init();
     int start_ui_init();
     int hal_read_shape_model();
+    int hal_read_mark_shape_model();
     int cal_data_ini_read();
     //图像处理
     int image_process(Hobject& Image, Hlong model_id, double score, double& pix_x, double& pix_y);//单颗螺丝
@@ -123,7 +125,7 @@ signals:
 public slots:
     //接收modbus tcp传送的数据
     void slot_read_data(float screwdriver,float screw,\
-                        float enable,float receive,float reserve);
+                        float enable,float receive,float mark,float xcoor,float ycoor);
     void slot_connect_button_status(bool connected);
 
 private slots:

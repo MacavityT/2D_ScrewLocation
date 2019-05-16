@@ -96,7 +96,7 @@ int modbus_tcp_server::get_settings()
     QModbusDataUnit data_1(QModbusDataUnit::HoldingRegisters,0,10);
     write_data=data_1;
     //注册读取参数
-    QModbusDataUnit data_2(QModbusDataUnit::HoldingRegisters,20,10);
+    QModbusDataUnit data_2(QModbusDataUnit::HoldingRegisters,20,14);
     read_data=data_2;
 
     return 0;
@@ -166,7 +166,7 @@ void modbus_tcp_server::updateWidgets(QModbusDataUnit::RegisterType table, int a
     modbusDevice->data(&read_data);
     QVector<QVector<quint16>> data_array;
     QVector<quint16> data;
-    for(int i(0);i<5;i++)
+    for(int i(0);i<7;i++)
     {
         for(int j(0);j<2;j++)
         {
@@ -180,12 +180,13 @@ void modbus_tcp_server::updateWidgets(QModbusDataUnit::RegisterType table, int a
     float screw=quint_to_float(data_array[1],2);
     float enable=quint_to_float(data_array[2],4);
     float receive=quint_to_float(data_array[3],6);
-    float reserve=quint_to_float(data_array[4],8);
+    float mark=quint_to_float(data_array[4],8);
+    float xcoor=quint_to_float(data_array[5],10);
+    float ycoor=quint_to_float(data_array[6],12);
     if(receive==1.0)
         setupDeviceData(0,0,0,0,0);
     //触发检测函数
-    emit signal_read_data(screwdriver,screw,enable,receive,reserve);
-
+    emit signal_read_data(screwdriver,screw,enable,receive,mark,xcoor,ycoor);
 }
 
 //接收数据转换

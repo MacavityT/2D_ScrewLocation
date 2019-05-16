@@ -36,7 +36,7 @@ public:
     void deleteFile();
 
     int draw_show();
-    int save_templa_image();
+    int save_templa_image(bool isMark);
     //相机初始化
     int cam_init(basler_cam* ptr_cam);
     //QMessage打印
@@ -79,6 +79,14 @@ private slots:
 
     void on_pushButtonClearWindow_clicked();
 
+    void on_combo_mark_Index_activated(int index);
+
+    void on_combo_mark_Score_activated(const QString &arg1);
+
+    void on_pushButton_mark_confirm_clicked();
+
+    void on_pushButtonCreateShapeModelMark_clicked();
+
 private:
     Ui::DialogShapeModel *ui;
 
@@ -98,10 +106,14 @@ private:
     int screw_type=0;
     double model_score=0.0;
 
+    //mark点编号
+    double mark_model_score=0.0;
+
     //list view列表所使用字段
     QStandardItemModel *standardItemModel;
     QStringList strList;
     QString m_fileName;
+    QString m_mark_fileName;
     int index_delete;
 
     //图像采集

@@ -73,12 +73,14 @@ void DialogSetting::on_HeartBeatControl_clicked()
 }
 
 void DialogSetting::slot_read_data(float screwdriver, float screw, \
-                                   float enable, float receive, float reserve)
+                                   float enable, float receive, float mark, float xcoor, float ycoor)
 {
     QString address;
     ui->holdReg_5->setText(address.setNum(screwdriver));
     ui->holdReg_6->setText(address.setNum(screw));
     ui->holdReg_7->setText(address.setNum(enable));
     ui->holdReg_8->setText(address.setNum(receive));
-    ui->holdReg_9->setText(address.setNum(reserve));
+    ui->holdReg_9->setText(address.setNum(mark));
+    ui->holdReg_10->setText(address.setNum(xcoor));
+    ui->holdReg_11->setText(address.setNum(ycoor));
 }

@@ -78,7 +78,7 @@ private Q_SLOTS:
 signals:
     void signal_connect_button_status(bool connected);
     void signal_read_data(float screwdriver,float screw,\
-                          float enable,float receive,float reserve);
+                          float enable,float receive,float mark,float xcoor, float ycoor);
 public slots:   
     //服务器数据设置（发送数据由PLC主动读取）
     int  setupDeviceData(float x_coor,float y_coor,float complete,float heartbeat,float reserve);
