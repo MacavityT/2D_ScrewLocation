@@ -34,6 +34,9 @@ MainWindow::MainWindow(QWidget *parent) :
             this,SLOT(slot_read_data(float,float,float,float,float,float,float)));
     connect(this,SIGNAL(signal_setupDeviceData(float,float,float,float,float)),\
             &m_modbus,SLOT(setupDeviceData(float,float,float,float,float)));
+    //发送结果标志位
+    connect(this,SIGNAL(signal_setupDeviceData(float,float,float,float,float)),\
+            this,SLOT(setupDeviceData(float,float,float,float,float)));
     //连接调试界面与通信类
     connect(&m_modbus,SIGNAL(signal_read_data(float,float,float,float,float,float,float)),\
             &m_setting_dialog,SLOT(slot_read_data(float,float,float,float,float,float,float)));
@@ -367,6 +370,7 @@ void MainWindow::on_pushButton_Start_clicked()
 
     //加载模板
     hal_read_shape_model();
+    hal_read_mark_shape_model();
     //加载检测区域
     QString qdstr = m_path_exe + QString("/region/DetectionRegion.hobj");
     QFile qfile1(qdstr);
@@ -405,6 +409,8 @@ void MainWindow::on_pushButton_Start_clicked()
     m_ini.read("StandardPosition","WorldCoordinate_y",m_cal_data.StdW.y);
     m_ini.read("StandardPosition","PixelCoordinate_x",m_cal_data.StdP.x);
     m_ini.read("StandardPosition","PixelCoordinate_y",m_cal_data.StdP.y);
+    m_ini.read("StandardPosition","OffsetX",m_cal_data.Offset.x);
+    m_ini.read("StandardPosition","OffsetY",m_cal_data.Offset.y);
     //界面显示--用户
     ui->pushButton_Stop->setEnabled(true);
     ui->pushButton_Start->setEnabled(false);
@@ -509,6 +515,7 @@ void MainWindow::slot_connect_button_status(bool connected)
         ui->textBrowser->append("连接断开");
     }
 }
+
 //接收数据,由modbus类中的回调函数收到数据后发送到此处
 void MainWindow::slot_read_data(float screwdriver, float screw, float enable, float receive, float mark, float xcoor, float ycoor)
 {
@@ -516,15 +523,30 @@ void MainWindow::slot_read_data(float screwdriver, float screw, float enable, fl
         return;//程序未运行，接收数据不处理
     if(0.0==enable)
         return;//拍照禁止
+    IsResultSend=false;
 
     if(mark!=0.0)
     {
-        mark_process(mark,xcoor,ycoor);
+        int markInt=mark;
+        mark_process(markInt,xcoor,ycoor);
     }
     else
     {
-        screw_process(screwdriver,screw,xcoor,ycoor);
+        int screwDriverInt=screwdriver;
+        int screwInt=screw;
+        screw_process(screwDriverInt,screwInt,xcoor,ycoor);
     }
+    if(!IsResultSend)
+    {
+        ui->textBrowser->append("Result send failed");
+    }
+}
+
+//发送数据
+void MainWindow::setupDeviceData(float x_coor,float y_coor,\
+                                       float complete,float heartbeat,float reserve)
+{
+    IsResultSend=true;
 }
 
 //Mark点流程
@@ -533,7 +555,7 @@ void MainWindow::mark_process(int mark ,float xcoor ,float ycoor)
     //准备错误信息
     QString error_message;
     int mark_index=mark;
-    error_message="Mark"+error_message.setNum(mark);
+    error_message="Mark"+error_message.setNum(mark)+": ";
     //判断模板是否存在
     if(m_mark_ModelID.find(mark_index)==m_mark_ModelID.end())
     {
@@ -606,6 +628,14 @@ void MainWindow::mark_process(int mark ,float xcoor ,float ycoor)
         try
         {
             vector_to_hom_mat2d(mark_x_1,mark_y_1,mark_x_2,mark_y_2,&HomMat2DRunTime);
+
+            if(m_SaveResult)
+            {
+                QString qdstr = m_path_exe + "/cal/RunTimeTransHomMat2D.tup";
+                QByteArray ba = qdstr.toLatin1();
+                char* ch=ba.data();
+                write_tuple (HomMat2DRunTime, ch);
+            }
         }
         catch(...)
         {
@@ -614,6 +644,18 @@ void MainWindow::mark_process(int mark ,float xcoor ,float ycoor)
             return;
         }
     }
+
+    //计算结果保存至param.ini
+    if(m_SaveResult)
+    {
+        m_ini.write("Runtime",error_message+QString("px"),pix_x);
+        m_ini.write("Runtime",error_message+QString("py"),pix_y);
+        m_ini.write("Runtime",error_message+QString("xcoor"),xcoor);
+        m_ini.write("Runtime",error_message+QString("ycoor"),ycoor);
+        m_ini.write("Runtime",error_message+QString("offsetX"),offset_x);
+        m_ini.write("Runtime",error_message+QString("offsetY"),offset_y);
+    }
+
     //发送完成信号
     emit signal_setupDeviceData(NULL,NULL,1.0,NULL,NULL);
     //显示当前图片
@@ -638,7 +680,7 @@ void MainWindow::screw_process(int screwdriver, int screw, float xcoor, float yc
     QString error_message;
     QString wrong_screwdriver;
     QString wrong_screw;
-    error_message=wrong_screwdriver.setNum(screwdriver)+'_'+wrong_screw.setNum(screw)+":";
+    error_message=wrong_screwdriver.setNum(screwdriver)+'_'+wrong_screw.setNum(screw)+": ";
     //判断模板是否存在
     int screwdriver_index=screwdriver;
     int screw_index=screw;
@@ -762,10 +804,15 @@ void MainWindow::screw_process(int screwdriver, int screw, float xcoor, float yc
     }
 
     //结果发送
-    double x_diff=0,y_diff=0;
+    double x_diff=0,y_diff=0,x_offsetMin=0,x_offsetMax=0,y_offsetMin=0,y_offsetMax=0;
     x_diff=exact_offset_x-offset_x;
     y_diff=exact_offset_y-offset_y;
-    if(x_diff>-5.0&&x_diff<5.0&&y_diff>-5.0&&y_diff<5.0)
+    x_offsetMin=m_cal_data.Offset.x<-(m_cal_data.Offset.x)? m_cal_data.Offset.x:-(m_cal_data.Offset.x);
+    x_offsetMax=m_cal_data.Offset.x>-(m_cal_data.Offset.x)? m_cal_data.Offset.x:-(m_cal_data.Offset.x);
+    y_offsetMin=m_cal_data.Offset.y<-(m_cal_data.Offset.y)? m_cal_data.Offset.y:-(m_cal_data.Offset.y);
+    y_offsetMax=m_cal_data.Offset.y>-(m_cal_data.Offset.y)? m_cal_data.Offset.y:-(m_cal_data.Offset.y);
+
+    if(x_diff>x_offsetMin && x_diff<x_offsetMax && y_diff>y_offsetMin && y_diff<y_offsetMax)
     {
         x_coor=exact_offset_x;
         y_coor=exact_offset_y;
@@ -773,12 +820,26 @@ void MainWindow::screw_process(int screwdriver, int screw, float xcoor, float yc
     }
     else
     {
+        QString xDiff,yDiff;
+        ui->textBrowser->append(error_message+"XExactOffset="+xDiff.setNum(exact_offset_x));
+        ui->textBrowser->append(error_message+"YExactOffset="+yDiff.setNum(exact_offset_y));
+        ui->textBrowser->append(error_message+"XScrewOffset="+xDiff.setNum(offset_x));
+        ui->textBrowser->append(error_message+"YScrewOffset="+yDiff.setNum(offset_y));
+        ui->textBrowser->append(error_message+"XDifference="+xDiff.setNum(x_diff));
+        ui->textBrowser->append(error_message+"YDifference="+yDiff.setNum(y_diff));
         emit signal_setupDeviceData(-1.0,-1.0,1.0,NULL,NULL);
     }
-
-    QString XDiff,YDiff;
-    ui->textBrowser->append(error_message+QString("DifferenceX=")+XDiff.setNum(x_diff));
-    ui->textBrowser->append(error_message+QString("DifferenceY=")+YDiff.setNum(y_diff));
+    //计算结果保存至param.ini
+    if(m_SaveResult)
+    {
+        error_message=error_message.replace(":"," ");
+        m_ini.write("Runtime",error_message+QString("xcoor"),xcoor);
+        m_ini.write("Runtime",error_message+QString("ycoor"),ycoor);
+        m_ini.write("Runtime",error_message+QString("offsetX"),offset_x);
+        m_ini.write("Runtime",error_message+QString("offsetY"),offset_y);
+        m_ini.write("Runtime",error_message+QString("ExactX"),exact_offset_x);
+        m_ini.write("Runtime",error_message+QString("ExactY"),exact_offset_y);
+    }
     //显示当前图片
     HTuple px = HTuple(pix_x);
     HTuple py = HTuple(pix_y);

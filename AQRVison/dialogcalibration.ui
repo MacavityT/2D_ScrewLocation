@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1024</width>
-    <height>550</height>
+    <height>568</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -22,10 +22,6 @@
      <height>480</height>
     </rect>
    </property>
-   <zorder>groupBox_2</zorder>
-   <zorder>groupBox_5</zorder>
-   <zorder>groupBox_3</zorder>
-   <zorder>CalibrationCoordinate</zorder>
   </widget>
   <widget class="QPushButton" name="pushButtonSnapOne">
    <property name="geometry">
@@ -82,7 +78,7 @@
     <property name="geometry">
      <rect>
       <x>30</x>
-      <y>100</y>
+      <y>80</y>
       <width>80</width>
       <height>30</height>
      </rect>
@@ -99,7 +95,7 @@ border-radius:10px;</string>
     <property name="geometry">
      <rect>
       <x>140</x>
-      <y>100</y>
+      <y>80</y>
       <width>81</width>
       <height>31</height>
      </rect>
@@ -109,7 +105,7 @@ border-radius:10px;</string>
     <property name="geometry">
      <rect>
       <x>240</x>
-      <y>100</y>
+      <y>80</y>
       <width>81</width>
       <height>31</height>
      </rect>
@@ -156,7 +152,7 @@ border-radius:10px;</string>
     <property name="geometry">
      <rect>
       <x>240</x>
-      <y>170</y>
+      <y>130</y>
       <width>81</width>
       <height>31</height>
      </rect>
@@ -166,7 +162,7 @@ border-radius:10px;</string>
     <property name="geometry">
      <rect>
       <x>140</x>
-      <y>170</y>
+      <y>130</y>
       <width>81</width>
       <height>31</height>
      </rect>
@@ -179,7 +175,7 @@ border-radius:10px;</string>
     <property name="geometry">
      <rect>
       <x>30</x>
-      <y>170</y>
+      <y>130</y>
       <width>80</width>
       <height>30</height>
      </rect>
@@ -190,6 +186,46 @@ border-radius:10px;</string>
     </property>
     <property name="text">
      <string>图像位置</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="pushButton_OffsetValue">
+    <property name="enabled">
+     <bool>true</bool>
+    </property>
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>180</y>
+      <width>80</width>
+      <height>30</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color:rgb(225,225,225);
+border-radius:10px;</string>
+    </property>
+    <property name="text">
+     <string>偏移范围</string>
+    </property>
+   </widget>
+   <widget class="QTextEdit" name="textEdit_offsetY">
+    <property name="geometry">
+     <rect>
+      <x>240</x>
+      <y>180</y>
+      <width>81</width>
+      <height>31</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QTextEdit" name="textEdit_offsetX">
+    <property name="geometry">
+     <rect>
+      <x>140</x>
+      <y>180</y>
+      <width>81</width>
+      <height>31</height>
+     </rect>
     </property>
    </widget>
   </widget>
@@ -296,7 +332,7 @@ border-radius:10px;</string>
      <x>650</x>
      <y>410</y>
      <width>361</width>
-     <height>71</height>
+     <height>91</height>
     </rect>
    </property>
   </widget>
@@ -311,6 +347,32 @@ border-radius:10px;</string>
    </property>
    <property name="text">
     <string>测试</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>520</y>
+     <width>1001</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>提示：1.Mark点坐标（拍照位置）与运行时的螺丝拍照位置必须为同一台产品不移动时的数据，若移动产品更改Mark点拍照位置，则必须调整所有螺丝拍照位置；反之亦然。</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_2">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>540</y>
+     <width>1001</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>      2.偏移范围为正负值，如设置偏移量为5，则运行时对比范围为±5mm(设置时需要设为正值)</string>
    </property>
   </widget>
  </widget>

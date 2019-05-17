@@ -49,6 +49,8 @@ private slots:
 
     void on_YCoordinate_textChanged();
 
+    void on_pushButton_OffsetValue_clicked();
+
 public:
     int hal_init();
     void widget_init();

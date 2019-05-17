@@ -496,7 +496,7 @@ void DialogShapeModel::on_pushButtonCreateShapeModelMark_clicked()
     //刷新list
     strList.append("mark-" + m_mark_fileName + ".shm");
     refresh_list();
-    ui->pushButtonCreateShapeModel->setEnabled(false);
+    ui->pushButtonCreateShapeModelMark->setEnabled(false);
 
     return;
 }

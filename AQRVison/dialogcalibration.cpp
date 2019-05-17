@@ -10,17 +10,17 @@ Dialog::Dialog(QWidget *parent) :
     //设置界面图标
     setWindowIcon(QIcon(":home.png"));  
     this->setWindowTitle("Calibration dialog");
+    //标定参数初始化
+    memset(Calibrate_data_X,0,sizeof(double)*10);
+    memset(Calibrate_data_Y,0,sizeof(double)*10);
+    //路径初始化
+    m_path_exe = QCoreApplication::applicationDirPath();
     //窗口控件初始化
     widget_init();
     //显示参数初始化
     parameter_init();
     //Halocn窗体初始化
     hal_init();
-    //标定参数初始化
-    memset(Calibrate_data_X,0,sizeof(double)*10);
-    memset(Calibrate_data_Y,0,sizeof(double)*10);
-    //路径初始化
-    m_path_exe = QCoreApplication::applicationDirPath();
 }
 
 Dialog::~Dialog()
@@ -101,6 +101,21 @@ void Dialog::parameter_init()
     m_ini.read("StandardPosition","PixelCoordinate_y",pStdy);
     ui->textEdit_pStdx->setText(pStdx);
     ui->textEdit_pStdy->setText(pStdy);
+
+    //偏移量数据
+    QString offsetX,offsetY;
+    m_ini.read("StandardPosition","OffsetX",offsetX);
+    m_ini.read("StandardPosition","OffsetY",offsetY);
+    ui->textEdit_offsetX->setText(offsetX);
+    ui->textEdit_offsetY->setText(offsetY);
+
+    //标定点数据
+    for(int i=1;i<10;i++)
+    {
+        QString index=QString::number(i);
+        m_ini.read("Cal", "WX"+index, Calibrate_data_X[i]);
+        m_ini.read("Cal", "WY"+index, Calibrate_data_Y[i]);
+    }
 }
 
 //图像开窗
@@ -297,6 +312,10 @@ int Dialog::write_cal_point_data()
     m_ini.write("StandardPosition","PixelCoordinate_x",ui->textEdit_pStdx->toPlainText().toDouble());
     m_ini.write("StandardPosition","PixelCoordinate_y",ui->textEdit_pStdy->toPlainText().toDouble());
 
+    //偏移量范围
+    m_ini.write("StandardPosition","OffsetX",ui->textEdit_offsetX->toPlainText().toDouble());
+    m_ini.write("StandardPosition","OffsetY",ui->textEdit_offsetY->toPlainText().toDouble());
+
     //标定点数据（世界坐标）
     for(int i=1;i<10;i++)
     {
@@ -324,6 +343,13 @@ void Dialog::on_pushButton_Stdpix_clicked()
 {
     m_ini.write("StandardPosition","PixelCoordinate_x",ui->textEdit_pStdx->toPlainText().toDouble());
     m_ini.write("StandardPosition","PixelCoordinate_y",ui->textEdit_pStdy->toPlainText().toDouble());
+}
+
+
+void Dialog::on_pushButton_OffsetValue_clicked()
+{
+    m_ini.write("StandardPosition","OffsetX",ui->textEdit_offsetX->toPlainText().toDouble());
+    m_ini.write("StandardPosition","OffsetY",ui->textEdit_offsetY->toPlainText().toDouble());
 }
 
 //测试按钮

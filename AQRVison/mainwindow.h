@@ -43,6 +43,7 @@ struct cal_data
 {
     aqPt StdW,StdP;
     aqPt LuoW;
+    aqPt Offset;
     aqPt W1,W2,W3,W4;
     aqPt P1,P2,P3,P4;
 };
@@ -56,6 +57,7 @@ public:
 
     void closeEvent(QCloseEvent *event);
 public:
+    bool IsResultSend=false;
     //运行标志位
     static bool Runtime;
     //data模块
@@ -133,6 +135,7 @@ public slots:
     void slot_read_data(float screwdriver,float screw,\
                         float enable,float receive,float mark,float xcoor,float ycoor);
     void slot_connect_button_status(bool connected);
+    void setupDeviceData(float x_coor,float y_coor,float complete,float heartbeat,float reserve);
 
 private slots:
     void on_pushButton_Connect_clicked();
