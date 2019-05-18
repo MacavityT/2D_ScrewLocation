@@ -34,7 +34,7 @@ void DialogSetting::setupWidgetContainers()
     const QList<QLineEdit *> qle = findChildren<QLineEdit *>(regexp);
     foreach (QLineEdit *lineEdit, qle) {
         lineEdit->setProperty("ID", regexp.match(lineEdit->objectName()).captured("ID").toInt());
-        lineEdit->setValidator(new QRegExpValidator(QRegExp(QStringLiteral("[0-9]{0,8}.[0-9]{0,8}"),
+        lineEdit->setValidator(new QRegExpValidator(QRegExp(QStringLiteral("-[0-9]{0,8}.[0-9]{0,8}"),
             Qt::CaseInsensitive), this));
         connect(lineEdit, &QLineEdit::textChanged, this, &DialogSetting::data_sender);
     }

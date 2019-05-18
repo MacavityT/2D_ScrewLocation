@@ -34,7 +34,8 @@ DialogShapeModel::DialogShapeModel(QWidget *parent) :
     connect(this,SIGNAL(signal_image_capture()),&m_image_capture,SLOT(slot_image_capture()));
     connect(&m_image_capture,SIGNAL(signal_transmit_image(Hobject)),this,SLOT(slot_transmit_image(Hobject)));
     //刷新模版列表
-    refresh_list();       
+    refresh_list();
+
     //初始化采集线程
     m_image_capture.moveToThread(&m_thread);
     m_thread.start();
@@ -140,7 +141,7 @@ int DialogShapeModel::start_param_init()
     m_path_exe = QCoreApplication::applicationDirPath();
     standardItemModel = new QStandardItemModel(this);
 
-    //初始化刷新list 封装函数 待改
+    //初始化刷新list 封装函数
     QDir dir(m_path_exe + "/match/");
     dir.setFilter(QDir::Files | QDir::Hidden | QDir::NoSymLinks);
     QFileInfoList list = dir.entryInfoList();
@@ -166,6 +167,8 @@ int DialogShapeModel::start_param_init()
             continue;
         }
     }
+    //初始化双螺丝标志位
+    memset(&DoubleScrew,0,sizeof(int)*4*30);
 
     return 0;
 }
@@ -380,11 +383,65 @@ void DialogShapeModel::on_pushButtonClearWindow_clicked()
 void DialogShapeModel::on_combo_ShangStd_activated(int index)
 {
     screw_num=index;
+
+    QString screw_index,driver_index;
+    driver_index.setNum(screw_type);
+    screw_index.setNum(screw_num);
+    m_fileName=driver_index+'_'+screw_index;
+
+    //双螺丝选项
+    int state=0;
+    m_ini.read("DoubleScrew",m_fileName,state);
+    if(1==state)
+    {
+        ui->checkBox_DoubleScrew->setChecked(true);
+    }
+    else
+    {
+        ui->checkBox_DoubleScrew->setChecked(false);
+    }
+
+    //模板相似度
+    QString score;
+    m_ini.read("Model_Score",m_fileName,score);
+    score=score.replace("0.","");
+    int score_index=score.toInt();
+    if(score_index>=0)
+    {
+        ui->combo_Score->setCurrentIndex(score_index);
+    }
 }
 
 void DialogShapeModel::on_combo_Type_activated(int index)
 {
     screw_type=index;
+
+    QString screw_index,driver_index;
+    driver_index.setNum(screw_type);
+    screw_index.setNum(screw_num);
+    m_fileName=driver_index+'_'+screw_index;
+
+    //双螺丝选项
+    int state=0;
+    m_ini.read("DoubleScrew",m_fileName,state);
+    if(1==state)
+    {
+        ui->checkBox_DoubleScrew->setChecked(true);
+    }
+    else
+    {
+        ui->checkBox_DoubleScrew->setChecked(false);
+    }
+
+    //模板相似度
+    QString score;
+    m_ini.read("Model_Score",m_fileName,score);
+    score=score.replace("0.","");
+    int score_index=score.toInt();
+    if(score_index>=0)
+    {
+        ui->combo_Score->setCurrentIndex(score_index);
+    }
 }
 
 void DialogShapeModel::on_combo_Score_activated(const QString &arg1)
@@ -399,6 +456,25 @@ void DialogShapeModel::on_combo_Score_activated(const QString &arg1)
     m_ini.write("Model_Score",m_fileName,score);
     model_score=score.toDouble();
 }
+
+
+void DialogShapeModel::on_checkBox_DoubleScrew_toggled(bool checked)
+{
+    QString screw_index,driver_index;
+    driver_index.setNum(screw_type);
+    screw_index.setNum(screw_num);
+    m_fileName=driver_index+'_'+screw_index;
+
+    if(checked)
+    {
+        m_ini.write("DoubleScrew",m_fileName,1);
+    }
+    else
+    {
+        m_ini.write("DoubleScrew",m_fileName,0);
+    }
+}
+
 
 //关系确定后命名并创建模板
 void DialogShapeModel::on_pushButton_confirm_clicked()
@@ -447,7 +523,7 @@ int DialogShapeModel::ClickButtonCreateShapeModel()
     //刷新list
     strList.append("match-" + m_fileName + ".shm");
     refresh_list();
-	ui->pushButtonCreateShapeModel->setEnabled(false);
+    ui->pushButtonCreateShapeModel->setEnabled(false);
 
     return 0;
 }
@@ -456,6 +532,16 @@ int DialogShapeModel::ClickButtonCreateShapeModel()
 void DialogShapeModel::on_combo_mark_Index_activated(int index)
 {
     m_mark_fileName.setNum(index);
+
+    //模板相似度
+    QString score;
+    m_ini.read("Mark_Model_Score",m_mark_fileName,score);
+    score=score.replace("0.","");
+    int score_index=score.toInt();
+    if(score_index>=0)
+    {
+        ui->combo_mark_Score->setCurrentIndex(score_index);
+    }
 }
 
 void DialogShapeModel::on_combo_mark_Score_activated(const QString &arg1)

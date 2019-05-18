@@ -164,6 +164,8 @@ int MainWindow::hal_read_shape_model()
         }
     }
     //读取模板并保存至Map，保存过程中将“match-”字符替换为空字符，并将剩余数字作为Map index
+    //初始化双螺丝标志
+    memset(&DoubleScrew,0,sizeof(int)*4*30);
     for (int i = 0; i < list.size(); ++i)
     {
         //正则表达式检测文件
@@ -197,8 +199,7 @@ int MainWindow::hal_read_shape_model()
                     screw_num_start=true;
                 }
             }
-            //读取双螺丝标志位
-            memset(&DoubleScrew,0,sizeof(int)*4*30);
+            //读取双螺丝标志
             m_ini.read("DoubleScrew",template_name,DoubleScrew[screw_driver_index.toInt()-1][screw_index.toInt()-1]);
             //读取模板
             Hlong modelID;
