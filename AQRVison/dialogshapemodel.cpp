@@ -16,6 +16,7 @@ DialogShapeModel::DialogShapeModel(QWidget *parent) :
     ui->setupUi(this);
     this->setWindowTitle("Shape model dialog");
     ui->pushButtonCreateShapeModel->setEnabled(false);
+    ui->pushButtonCreateShapeModelMark->setEnabled(false);
     //设置路径选择窗口
     fileDialog=new QFileDialog(this);
     //define fileDialog title
@@ -492,7 +493,7 @@ void DialogShapeModel::on_pushButton_confirm_clicked()
     m_fileName=driver_index+'_'+screw_index;
 
     //开始绘画模板,完成创建后保存按钮使能
-    if(0==draw_show())
+    if(0==draw_show(false))
     {
         m_ini.write("Model_Score",m_fileName,model_score);
         //保存使能
@@ -556,7 +557,7 @@ void DialogShapeModel::on_combo_mark_Score_activated(const QString &arg1)
 void DialogShapeModel::on_pushButton_mark_confirm_clicked()
 {
     //开始绘画模板,完成创建后保存按钮使能
-    if(0==draw_show())
+    if(0==draw_show(true))
     {
         //更改模板分数
         m_ini.write("Mark_Model_Score",m_mark_fileName,mark_model_score);
@@ -589,16 +590,34 @@ void DialogShapeModel::on_pushButtonCreateShapeModelMark_clicked()
 
 
 //模板创建过程与显示
-int DialogShapeModel::draw_show()
+int DialogShapeModel::draw_show(bool isMark)
 {
     //提示画一个圆圈
     set_color(m_win_id,"green");
     set_line_width(m_win_id,3);
     draw_circle(m_win_id,&m_create_row,&m_create_col,&m_create_radius);
     disp_circle(m_win_id,m_create_row,m_create_col,m_create_radius);
-    copy_obj(m_image, &cpy_image, 1, 1);
     gen_circle(&m_modelRegion, m_create_row,m_create_col,m_create_radius);
 
+    //Mark点使用环形区域建模
+    if(isMark)
+    {
+        double n_new_radius;
+        Hobject n_new_Region;
+        draw_circle(m_win_id,&m_create_row,&m_create_col,&n_new_radius);
+        disp_circle(m_win_id,m_create_row,m_create_col,n_new_radius);
+        gen_circle(&n_new_Region, m_create_row,m_create_col,n_new_radius);
+        if(m_create_radius>=n_new_radius)
+        {
+            difference(m_modelRegion,n_new_Region,&m_modelRegion);
+        }
+        else
+        {
+            difference(n_new_Region,m_modelRegion,&m_modelRegion);
+        }
+    }
+
+    copy_obj(m_image, &cpy_image, 1, 1);
     reduce_domain(cpy_image, m_modelRegion, &m_templateImage);
     try{
         create_shape_model(m_templateImage,  6, HTuple(0).Rad(), HTuple(360).Rad(),
@@ -623,6 +642,7 @@ int DialogShapeModel::draw_show()
     set_color(m_win_id, "green");
     set_draw(m_win_id, "margin");
     disp_obj(m_modelRegion, m_win_id);
+    set_color(m_win_id, "red");
     disp_obj(m_TransContours, m_win_id);
 
     return 0;
