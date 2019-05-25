@@ -120,7 +120,7 @@ public:
     float x_coor,y_coor;//偏移量结果，如果未识别到则结果不变
     double findx_delay=0,findy_delay=0;//延迟发送，当识别两颗螺丝时，第二个图像位置暂时保存，等待下一次使能时计算偏移量
     //处理后显示
-    int image_show(Hobject& Image,HTuple& findRow,HTuple& findCol,bool bState);
+    int image_show(Hobject& Image,HTuple& findRow,HTuple& findCol,HTuple& offsetRow,HTuple& offsetCol,bool bState);
 
 private:
     Ui::MainWindow *ui;

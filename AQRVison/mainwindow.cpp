@@ -276,7 +276,7 @@ int MainWindow::hal_read_mark_shape_model()
 }
 
 //图像显示
-int MainWindow::image_show(Hobject& Image,HTuple& findRow,HTuple& findCol,bool bState)
+int MainWindow::image_show(Hobject& Image,HTuple& findRow,HTuple& findCol,HTuple& offsetRow,HTuple& offsetCol,bool bState)
 {
     //图像显示
     get_image_size(Image,&image_width,&image_height);
@@ -291,9 +291,9 @@ int MainWindow::image_show(Hobject& Image,HTuple& findRow,HTuple& findCol,bool b
         disp_circle (m_win_id,findRow[0].D(), findCol[0].D(), 170);
         set_display_font (m_win_id, 20, "mono", "true", "false");
 
-        disp_message (m_win_id, "X = " + findCol + "  Offset_X=" + x_coor,\
+        disp_message (m_win_id, "X = " + findCol + "  Offset_X=" + offsetCol,\
                       "window", 40, 40, "green","true");
-        disp_message (m_win_id, "Y = " + findRow + "  Offset_Y=" + y_coor,\
+        disp_message (m_win_id, "Y = " + findRow + "  Offset_Y=" + offsetRow,\
                       "window", 90, 40, "green","true");
     }
     else
@@ -594,7 +594,9 @@ void MainWindow::mark_process(int mark ,float xcoor ,float ycoor)
     {
         HTuple px = 0.0;
         HTuple py = 0.0;
-        image_show(m_image,py,px,false);
+        HTuple offsetX=0.0;
+        HTuple offsetY=0.0;
+        image_show(m_image,py,px,offsetY,offsetX,false);
         ui->textBrowser->append(error_message+"定位螺丝失败!\n");
         emit signal_setupDeviceData(-1.0,-1.0,1.0,NULL,NULL);
         //图像-原图保存-处理后截图保存
@@ -609,7 +611,9 @@ void MainWindow::mark_process(int mark ,float xcoor ,float ycoor)
     {
         HTuple px = 0.0;
         HTuple py = 0.0;
-        image_show(m_image,py,px,false);
+        HTuple offsetX=0.0;
+        HTuple offsetY=0.0;
+        image_show(m_image,py,px,offsetY,offsetX,false);
         ui->textBrowser->append(error_message+"cal_offset失败!!\n");
         emit signal_setupDeviceData(-1.0,-1.0,1.0,NULL,NULL);
         //图像-原图保存-处理后截图保存
@@ -662,7 +666,9 @@ void MainWindow::mark_process(int mark ,float xcoor ,float ycoor)
     //显示当前图片
     HTuple px = HTuple(pix_x);
     HTuple py = HTuple(pix_y);
-    image_show(m_image,py,px,true);
+    HTuple offsetX=HTuple(offset_x);
+    HTuple offsetY=HTuple(offset_y);
+    image_show(m_image,py,px,offsetY,offsetX,true);
     //图像-原图保存-处理后截图保存
     image_save(m_image,m_SaveRaw,m_SaveResult);
 }
@@ -707,6 +713,8 @@ void MainWindow::screw_process(int screwdriver, int screw, float xcoor, float yc
     double pix_y = 0.0;
     double offset_x = 0.0;
     double offset_y = 0.0;
+    double offset_x_delay=0.0;
+    double offset_y_delay=0.0;
 
     //Get find model score
     double score=0;
@@ -728,7 +736,9 @@ void MainWindow::screw_process(int screwdriver, int screw, float xcoor, float yc
         {
             HTuple px = 0.0;
             HTuple py = 0.0;
-            image_show(m_image,py,px,false);
+            HTuple offsetX=0.0;
+            HTuple offsetY=0.0;
+            image_show(m_image,py,px,offsetY,offsetX,false);
             ui->textBrowser->append(error_message+"定位螺丝失败!\n");
             emit signal_setupDeviceData(-1.0,-1.0,1.0,NULL,NULL);
             //图像-原图保存-处理后截图保存
@@ -756,7 +766,9 @@ void MainWindow::screw_process(int screwdriver, int screw, float xcoor, float yc
             {
                 HTuple px = 0.0;
                 HTuple py = 0.0;
-                image_show(m_image,py,px,false);
+                HTuple offsetX=0.0;
+                HTuple offsetY=0.0;
+                image_show(m_image,py,px,offsetY,offsetX,false);
                 ui->textBrowser->append(error_message+"定位螺丝(双螺丝)失败!\n");
                 emit signal_setupDeviceData(-1.0,-1.0,1.0,NULL,NULL);
                 //图像-原图保存-处理后截图保存
@@ -773,11 +785,17 @@ void MainWindow::screw_process(int screwdriver, int screw, float xcoor, float yc
     }
 
     err = cal_offset(pix_x,pix_y,offset_x,offset_y);//返回的offset值为当前识别物理位置与记录的标准上螺丝物理位置的偏移量
+    if(findx_delay*findy_delay!=0)
+    {
+        err = cal_offset(findx_delay,findx_delay,offset_x_delay,offset_y_delay);//当前找到两颗螺丝时，计算两个螺丝的偏移量并和mark点计算的标准值对比
+    }
     if(0 != err)
     {
         HTuple px = 0.0;
         HTuple py = 0.0;
-        image_show(m_image,py,px,false);
+        HTuple offsetX=0.0;
+        HTuple offsetY=0.0;
+        image_show(m_image,py,px,offsetY,offsetX,false);
         ui->textBrowser->append(error_message+"cal_offset失败!!\n");
         emit signal_setupDeviceData(-1.0,-1.0,1.0,NULL,NULL);
         //图像-原图保存-处理后截图保存
@@ -805,9 +823,11 @@ void MainWindow::screw_process(int screwdriver, int screw, float xcoor, float yc
     }
 
     //结果发送
-    double x_diff=0,y_diff=0,x_offsetMin=0,x_offsetMax=0,y_offsetMin=0,y_offsetMax=0;
+    double x_diff=0,y_diff=0,x_diff_delay=0,y_diff_delay=0,x_offsetMin=0,x_offsetMax=0,y_offsetMin=0,y_offsetMax=0;
     x_diff=exact_offset_x-offset_x;
     y_diff=exact_offset_y-offset_y;
+    x_diff_delay=exact_offset_x-offset_x_delay;
+    y_diff_delay=exact_offset_y-offset_y_delay;
     x_offsetMin=m_cal_data.Offset.x<-(m_cal_data.Offset.x)? m_cal_data.Offset.x:-(m_cal_data.Offset.x);
     x_offsetMax=m_cal_data.Offset.x>-(m_cal_data.Offset.x)? m_cal_data.Offset.x:-(m_cal_data.Offset.x);
     y_offsetMin=m_cal_data.Offset.y<-(m_cal_data.Offset.y)? m_cal_data.Offset.y:-(m_cal_data.Offset.y);
@@ -815,8 +835,16 @@ void MainWindow::screw_process(int screwdriver, int screw, float xcoor, float yc
 
     if(x_diff>x_offsetMin && x_diff<x_offsetMax && y_diff>y_offsetMin && y_diff<y_offsetMax)
     {
-        x_coor=exact_offset_x;
-        y_coor=exact_offset_y;
+        x_coor=offset_x;
+        y_coor=offset_y;
+        emit signal_setupDeviceData(x_coor,y_coor,1.0,NULL,NULL);
+    }
+    else if(x_diff_delay>x_offsetMin && x_diff_delay<x_offsetMax && y_diff_delay>y_offsetMin && y_diff_delay<y_offsetMax)
+    {
+        x_coor=offset_x_delay;
+        y_coor=offset_y_delay;
+        findx_delay=pix_x;
+        findy_delay=pix_y;
         emit signal_setupDeviceData(x_coor,y_coor,1.0,NULL,NULL);
     }
     else
@@ -844,7 +872,9 @@ void MainWindow::screw_process(int screwdriver, int screw, float xcoor, float yc
     //显示当前图片
     HTuple px = HTuple(pix_x);
     HTuple py = HTuple(pix_y);
-    image_show(m_image,py,px,true);
+    HTuple offsetX=HTuple(offset_x);
+    HTuple offsetY=HTuple(offset_y);
+    image_show(m_image,py,px,offsetY,offsetX,true);
     //图像-原图保存-处理后截图保存
     image_save(m_image,m_SaveRaw,m_SaveResult);
     //写入时间及坐标
@@ -854,12 +884,14 @@ void MainWindow::screw_process(int screwdriver, int screw, float xcoor, float yc
 //图像处理
 int MainWindow::image_process(Hobject& Image,Hlong model_id,double score,double& pix_x,double& pix_y)
 {
-    HTuple findRow,findCol,findAngle,findScore;
+    HTuple findRow,findCol,findAngle,findScale,findScore;
 
     double dradRange = HTuple(360).Rad()[0].D();
     reduce_domain(Image,m_region,&Image);
-    find_shape_model(Image,  model_id, 0, dradRange , score, 1, 0.5,
-                     "least_squares", 5, 0.3, &findRow, &findCol, &findAngle, &findScore);
+//    find_shape_model(Image,  model_id, 0, dradRange , score, 1, 0.5,
+//                     "least_squares", 5, 0.3, &findRow, &findCol, &findAngle, &findScore);
+    find_scaled_shape_model(Image,  model_id, 0, dradRange , 0.8, 1.2, score, 1, 0.5,
+                     "least_squares", 5, 0.3, &findRow, &findCol, &findAngle, &findScale, &findScore);
 
     //判断findRow有无
     if(1 != findRow.Num())

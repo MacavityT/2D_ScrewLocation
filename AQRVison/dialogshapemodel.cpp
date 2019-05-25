@@ -620,9 +620,12 @@ int DialogShapeModel::draw_show(bool isMark)
     copy_obj(m_image, &cpy_image, 1, 1);
     reduce_domain(cpy_image, m_modelRegion, &m_templateImage);
     try{
-        create_shape_model(m_templateImage,  6, HTuple(0).Rad(), HTuple(360).Rad(),
-                           HTuple(0.5896).Rad(), (HTuple("point_reduction_high").Append("no_pregeneration")),
-                           "use_polarity", ((HTuple(21).Append(49)).Append(14)), 11, &m_ModelID);
+//        create_shape_model(m_templateImage,  6, HTuple(0).Rad(), HTuple(360).Rad(),
+//                           HTuple(0.5896).Rad(), (HTuple("point_reduction_high").Append("no_pregeneration")),
+//                           "use_polarity", ((HTuple(21).Append(49)).Append(14)), 11, &m_ModelID);
+        create_scaled_shape_model(m_templateImage,  6, HTuple(0).Rad(), HTuple(360).Rad(),
+                           HTuple(0.5896).Rad(),  0.8, 1.2,"auto",(HTuple("point_reduction_high").Append("no_pregeneration")),
+                           "use_polarity", ((HTuple(10).Append(49)).Append(14)), 11, &m_ModelID);
     }
     catch(...)
     {
