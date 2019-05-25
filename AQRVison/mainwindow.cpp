@@ -731,6 +731,8 @@ void MainWindow::screw_process(int screwdriver, int screw, float xcoor, float yc
     copy_image(m_image,&tem_image);
     if(DoubleScrew[screwdriver_index-1][screw_index-1]==0)
     {
+        findx_delay=0;
+        findy_delay=0;//重置双螺丝延迟数据，防止只勾选1号位置而不勾选2号位置，则将会在运行到3号位置时乱走。
         err = image_process(tem_image, (m_ModelID[screwdriver_index])[screw_index],score,pix_x,pix_y);
         if(0 != err)
         {
