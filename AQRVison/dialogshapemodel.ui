@@ -123,7 +123,7 @@
     <rect>
      <x>20</x>
      <y>510</y>
-     <width>661</width>
+     <width>571</width>
      <height>71</height>
     </rect>
    </property>
@@ -172,7 +172,7 @@ border-radius:10px;</string>
    <widget class="QPushButton" name="pushButton_confirm">
     <property name="geometry">
      <rect>
-      <x>470</x>
+      <x>370</x>
       <y>20</y>
       <width>80</width>
       <height>30</height>
@@ -361,7 +361,7 @@ border-radius:10px;</string>
    <widget class="QPushButton" name="pushButtonCreateShapeModel">
     <property name="geometry">
      <rect>
-      <x>570</x>
+      <x>470</x>
       <y>20</y>
       <width>80</width>
       <height>30</height>
@@ -446,23 +446,6 @@ border-radius:10px;</string>
       <string>1.0</string>
      </property>
     </item>
-   </widget>
-   <widget class="QCheckBox" name="checkBox_DoubleScrew">
-    <property name="geometry">
-     <rect>
-      <x>370</x>
-      <y>20</y>
-      <width>80</width>
-      <height>30</height>
-     </rect>
-    </property>
-    <property name="styleSheet">
-     <string notr="true">background-color:rgb(225,225,225);
-border-radius:10px;</string>
-    </property>
-    <property name="text">
-     <string>双螺丝</string>
-    </property>
    </widget>
   </widget>
   <widget class="QPushButton" name="pushButtonSaveOne">

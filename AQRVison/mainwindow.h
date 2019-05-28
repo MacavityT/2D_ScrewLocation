@@ -99,26 +99,19 @@ public:
     HTuple HomMat2DRunTime;
     HTuple mark_x_1,mark_y_1;
     HTuple mark_x_2,mark_y_2;
-    //双螺丝标志
-    int DoubleScrew[4][30];
-
-    //文件打开处理
-    int file_image_to_process();
-    int folder_image_to_process();
     //Hal 视觉部分初始化；视觉参数初始化
     int start_varia_init();
     int start_ui_init();
     int hal_read_shape_model();
     int hal_read_mark_shape_model();
-    int cal_data_ini_read();
     //图像处理
     void screw_process(int screwdriver,int screw,float xcoor,float ycoor);
     void mark_process(int mark,float xcoor,float ycoor);
-    int image_process(Hobject& Image, Hlong model_id, double score, double& pix_x, double& pix_y);//单颗螺丝
-    int image_process2(Hobject& Image, Hlong model_id, double score, HTuple& pix_x, HTuple& pix_y);//两颗螺丝
-    int cal_offset(double x,double y,double &world_offset_x, double &world_offset_y);
+    int image_process_mark(Hobject& Image, Hlong model_id, double score, double& pix_x, double& pix_y);
+    int image_process_screw(Hobject& Image,Hlong model_id,double score,double pix_x[],double pix_y[]);
+    int cal_offset_mark(double x,double y,double &world_offset_x, double &world_offset_y);
+    int cal_offset_screw(double x[],double y[],double world_offset_x[], double world_offset_y[]);
     float x_coor,y_coor;//偏移量结果，如果未识别到则结果不变
-    double findx_delay=0,findy_delay=0;//延迟发送，当识别两颗螺丝时，第二个图像位置暂时保存，等待下一次使能时计算偏移量
     //处理后显示
     int image_show(Hobject& Image,HTuple& findRow,HTuple& findCol,HTuple& offsetRow,HTuple& offsetCol,bool bState);
 

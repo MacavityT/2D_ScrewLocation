@@ -87,8 +87,6 @@ private slots:
 
     void on_pushButtonCreateShapeModelMark_clicked();
 
-    void on_checkBox_DoubleScrew_toggled(bool checked);
-
 private:
     Ui::DialogShapeModel *ui;
 
@@ -110,8 +108,6 @@ private:
 
     //mark点编号
     double mark_model_score=0.0;
-    //双螺丝标志
-    int DoubleScrew[4][30];
 
     //list view列表所使用字段
     QStandardItemModel *standardItemModel;

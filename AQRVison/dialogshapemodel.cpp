@@ -168,8 +168,6 @@ int DialogShapeModel::start_param_init()
             continue;
         }
     }
-    //初始化双螺丝标志位
-    memset(&DoubleScrew,0,sizeof(int)*4*30);
 
     return 0;
 }
@@ -390,18 +388,6 @@ void DialogShapeModel::on_combo_ShangStd_activated(int index)
     screw_index.setNum(screw_num);
     m_fileName=driver_index+'_'+screw_index;
 
-    //双螺丝选项
-    int state=0;
-    m_ini.read("DoubleScrew",m_fileName,state);
-    if(1==state)
-    {
-        ui->checkBox_DoubleScrew->setChecked(true);
-    }
-    else
-    {
-        ui->checkBox_DoubleScrew->setChecked(false);
-    }
-
     //模板相似度
     QString score;
     m_ini.read("Model_Score",m_fileName,score);
@@ -421,18 +407,6 @@ void DialogShapeModel::on_combo_Type_activated(int index)
     driver_index.setNum(screw_type);
     screw_index.setNum(screw_num);
     m_fileName=driver_index+'_'+screw_index;
-
-    //双螺丝选项
-    int state=0;
-    m_ini.read("DoubleScrew",m_fileName,state);
-    if(1==state)
-    {
-        ui->checkBox_DoubleScrew->setChecked(true);
-    }
-    else
-    {
-        ui->checkBox_DoubleScrew->setChecked(false);
-    }
 
     //模板相似度
     QString score;
@@ -457,25 +431,6 @@ void DialogShapeModel::on_combo_Score_activated(const QString &arg1)
     m_ini.write("Model_Score",m_fileName,score);
     model_score=score.toDouble();
 }
-
-
-void DialogShapeModel::on_checkBox_DoubleScrew_toggled(bool checked)
-{
-    QString screw_index,driver_index;
-    driver_index.setNum(screw_type);
-    screw_index.setNum(screw_num);
-    m_fileName=driver_index+'_'+screw_index;
-
-    if(checked)
-    {
-        m_ini.write("DoubleScrew",m_fileName,1);
-    }
-    else
-    {
-        m_ini.write("DoubleScrew",m_fileName,0);
-    }
-}
-
 
 //关系确定后命名并创建模板
 void DialogShapeModel::on_pushButton_confirm_clicked()
@@ -514,11 +469,6 @@ int DialogShapeModel::ClickButtonCreateShapeModel()
     if (0 != save_templa_image(false))
     {
         return -1;
-    }
-    //保存多螺丝信息
-    if(ui->checkBox_DoubleScrew->isChecked())
-    {
-        m_ini.write("DoubleScrew",m_fileName,1);
     }
     print_qmess(QString("succeed!"));//结果显示
     //刷新list

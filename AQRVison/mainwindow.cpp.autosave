@@ -1008,11 +1008,3 @@ int MainWindow::image_save(Hobject& Image, bool bIsSaveRaw,bool bIsSaveResult)
 
     return 0;
 }
-
-void MainWindow::on_pushButton_clicked()
-{
-    int i=5;
-    int x=-i;
-    i=6;
-    x=-i;
-}
