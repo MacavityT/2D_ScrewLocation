@@ -593,10 +593,10 @@ void MainWindow::mark_process(int mark ,float xcoor ,float ycoor)
         HTuple offsetX=0.0;
         HTuple offsetY=0.0;
         image_show(m_image,py,px,offsetY,offsetX,false);
-        ui->textBrowser->append(error_message+"定位螺丝失败!\n");
+        ui->textBrowser->append(error_message+"定位Mark点失败!\n");
         emit signal_setupDeviceData(-1.0,-1.0,1.0,NULL,NULL);
         //图像-原图保存-处理后截图保存
-        image_save(m_image,m_SaveRaw,m_SaveResult);
+        image_save(m_image,true,true);
         //写入时间及坐标
         m_data_file_csv.data_write(pix_x,pix_y,m_SaveData);
         return;
@@ -613,7 +613,7 @@ void MainWindow::mark_process(int mark ,float xcoor ,float ycoor)
         ui->textBrowser->append(error_message+"cal_offset_mark失败!!\n");
         emit signal_setupDeviceData(-1.0,-1.0,1.0,NULL,NULL);
         //图像-原图保存-处理后截图保存
-        image_save(m_image,m_SaveRaw,m_SaveResult);
+        image_save(m_image,true,true);
         //写入时间及坐标
         m_data_file_csv.data_write(pix_x,pix_y,m_SaveData);
         return;
@@ -735,7 +735,7 @@ void MainWindow::screw_process(int screwdriver, int screw, float xcoor, float yc
         ui->textBrowser->append(error_message+"定位螺丝失败!\n");
         emit signal_setupDeviceData(-1.0,-1.0,1.0,NULL,NULL);
         //图像-原图保存-处理后截图保存
-        image_save(m_image,m_SaveRaw,m_SaveResult);
+        image_save(m_image,true,true);
         return;
     }
 
@@ -750,7 +750,7 @@ void MainWindow::screw_process(int screwdriver, int screw, float xcoor, float yc
         ui->textBrowser->append(error_message+"cal_offset_screw失败!!\n");
         emit signal_setupDeviceData(-1.0,-1.0,1.0,NULL,NULL);
         //图像-原图保存-处理后截图保存
-        image_save(m_image,m_SaveRaw,m_SaveResult);
+        image_save(m_image,true,true);
         return;
     }
 
@@ -810,11 +810,33 @@ void MainWindow::screw_process(int screwdriver, int screw, float xcoor, float yc
             ui->textBrowser->append(error_message+"XDifference="+xDiff.setNum(x_diff[j]));
             ui->textBrowser->append(error_message+"YDifference="+yDiff.setNum(y_diff[j]));
         }
+
+        HTuple px,py,offsetX,offsetY;
+        for(int m=0;m<num;m++)
+        {
+            px[m]=pix_x[m];
+            py[m]=pix_y[m];
+            offsetX[m]=offset_x[m];
+            offsetY[m]=offset_y[m];
+        }
+        image_show(m_image,py,px,offsetY,offsetX,true);
+        ui->textBrowser->append(error_message+"螺丝位置错误!!\n");
         emit signal_setupDeviceData(-1.0,-1.0,1.0,NULL,NULL);
+    }
+    else
+    {
+        //显示当前图片
+        HTuple px = HTuple(pix_x[index]);
+        HTuple py = HTuple(pix_y[index]);
+        HTuple offsetX=HTuple(offset_x[index]);
+        HTuple offsetY=HTuple(offset_y[index]);
+        image_show(m_image,py,px,offsetY,offsetX,true);
+        //图像-原图保存-处理后截图保存
+        image_save(m_image,m_SaveRaw,m_SaveResult);
     }
 
     //计算结果保存至param.ini
-    if(m_SaveResult)
+    if(m_SaveResult||!status)
     {
         error_message=error_message.replace(":"," ");
         m_ini.write("Runtime",error_message+QString("xcoor"),xcoor);
@@ -827,14 +849,6 @@ void MainWindow::screw_process(int screwdriver, int screw, float xcoor, float yc
         m_ini.write("Runtime",error_message+QString("ExactX"),exact_offset_x);
         m_ini.write("Runtime",error_message+QString("ExactY"),exact_offset_y);
     }
-    //显示当前图片
-    HTuple px = HTuple(pix_x[index]);
-    HTuple py = HTuple(pix_y[index]);
-    HTuple offsetX=HTuple(offset_x[index]);
-    HTuple offsetY=HTuple(offset_y[index]);
-    image_show(m_image,py,px,offsetY,offsetX,true);
-    //图像-原图保存-处理后截图保存
-    image_save(m_image,m_SaveRaw,m_SaveResult);
 }
 
 //图像处理
@@ -859,11 +873,11 @@ int MainWindow::image_process_mark(Hobject& Image,Hlong model_id,double score,do
 
 int MainWindow::image_process_screw(Hobject& Image,Hlong model_id,double score,double pix_x[],double pix_y[])
 {
-    HTuple findRow,findCol,findAngle,findScore;
+    HTuple findRow,findCol,findAngle,findScale,findScore;
 
     double dradRange = HTuple(360).Rad()[0].D();
-    find_shape_model(Image,  model_id, 0, dradRange , score, 3, 0.5,
-                     "least_squares", 5, 0.3, &findRow, &findCol, &findAngle, &findScore);
+    find_scaled_shape_model(Image,  model_id, 0, dradRange , 0.8, 1.2, score, 3, 0.5,
+                     "least_squares", 5, 0.3, &findRow, &findCol, &findAngle, &findScale, &findScore);
 
     //判断findRow有无
     if(1 > findRow.Num())
@@ -1007,12 +1021,4 @@ int MainWindow::image_save(Hobject& Image, bool bIsSaveRaw,bool bIsSaveResult)
     }
 
     return 0;
-}
-
-void MainWindow::on_pushButton_clicked()
-{
-    int i=5;
-    int x=-i;
-    i=6;
-    x=-i;
 }

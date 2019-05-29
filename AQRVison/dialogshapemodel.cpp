@@ -874,37 +874,44 @@ void DialogShapeModel::on_pushButton_Test_clicked()
 
     //查找模板
     Hobject image;
-    HTuple findRow,findCol,findAngle,findScore;
+    HTuple findRow,findCol,findAngle,findScale,findScore;
     double dradRange = HTuple(360).Rad()[0].D();
     try
     {
         reduce_domain(m_image,m_modelRegion,&image);
-        find_shape_model(m_image,  test_modelID, 0, dradRange , score, 1, 0.5,
-                         "least_squares", 3, 0.9, &findRow, &findCol, &findAngle, &findScore);
+//        find_shape_model(m_image,  test_modelID, 0, dradRange , score, 1, 0.5,
+//                         "least_squares", 3, 0.9, &findRow, &findCol, &findAngle, &findScore);
+        find_scaled_shape_model(image,  test_modelID, 0, dradRange , 0.8, 1.2, score, 3, 0.5,
+                         "least_squares", 5, 0.3, &findRow, &findCol, &findAngle, &findScale, &findScore);
     }
     catch(...)
     {
         print_qmess(QString("匹配失败"));
         return;
     }
-    if(findRow.Num()!=1)
+    if(findRow.Num()<1)
     {
         print_qmess(QString("匹配失败"));
         return;
     }
 
     //结果显示
-    Hobject Contours;
+    Hobject Contours,ContoursAffineTrans,ShowContours;
     HTuple hom_mat_2d;
+    gen_empty_obj(&ShowContours);
     //轮廓仿射变换
     get_shape_model_contours (&Contours, test_modelID, 1);
-    vector_angle_to_rigid(0, 0, 0, findRow, findCol, findAngle, &hom_mat_2d);
-    affine_trans_contour_xld(Contours, &Contours, hom_mat_2d);
+    for(int i=0;i<findRow.Num();i++)
+    {
+        vector_angle_to_rigid(0, 0, 0, findRow[i], findCol[i], findAngle[i], &hom_mat_2d);
+        affine_trans_contour_xld(Contours, &ContoursAffineTrans, hom_mat_2d);
+        concat_obj(ShowContours,ContoursAffineTrans,&ShowContours);
+    }
     //显示模板轮廓
     set_color(m_win_id, "green");
     set_draw(m_win_id, "margin");
     disp_obj(m_image, m_win_id);
-    disp_obj(Contours, m_win_id);
+    disp_obj(ShowContours, m_win_id);
     //显示模板坐标
     disp_message (m_win_id, (("X="+(findCol.Select(0)))+"   Y=")+(findRow.Select(0)),\
                   "image", 40, 40, "green","true");
