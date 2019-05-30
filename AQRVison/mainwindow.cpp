@@ -820,6 +820,8 @@ void MainWindow::screw_process(int screwdriver, int screw, float xcoor, float yc
             offsetY[m]=offset_y[m];
         }
         image_show(m_image,py,px,offsetY,offsetX,true);
+        //图像-原图保存-处理后截图保存
+        image_save(m_image,true,true);
         ui->textBrowser->append(error_message+"螺丝位置错误!!\n");
         emit signal_setupDeviceData(-1.0,-1.0,1.0,NULL,NULL);
     }
