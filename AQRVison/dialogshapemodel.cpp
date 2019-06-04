@@ -96,7 +96,7 @@ int DialogShapeModel::start_ui_init()
     set_part(m_win_id,0,0,1944,2592);
     set_color(m_win_id,"green");
     set_draw(m_win_id,"margin");
-    set_line_width(m_win_id,3);
+    set_line_width(m_win_id,1);
     set_system("clip_region","false");
 
     //初始化按钮控件样式表
@@ -257,7 +257,7 @@ void DialogShapeModel::on_pushButtonSaveOne_clicked()
     catch (HException &except)
     {
         cerr<<except.err;
-        m_log.write_log("DialogShapeModel::on_pushButtonSaveOne_clicked(): write image1 failed!");
+        m_log.write_log("DialogShapeModel::on_pushButtonSaveOne_clicked(): write image1 failed!",true);
         return;
     }
 }
@@ -303,7 +303,7 @@ void DialogShapeModel::on_pushButtonDetectRegion_clicked()
     //提示画一个圆圈
     set_color(m_win_id,"green");
     set_draw(m_win_id,"margin");
-    set_line_width(m_win_id,3);
+    set_line_width(m_win_id,1);
     draw_circle(m_win_id,&m_create_row,&m_create_col,&m_create_radius);
     disp_circle(m_win_id,m_create_row,m_create_col,m_create_radius);
     gen_circle(&m_detect_region, m_create_row,m_create_col,m_create_radius);
@@ -448,7 +448,7 @@ void DialogShapeModel::on_pushButton_confirm_clicked()
     m_fileName=driver_index+'_'+screw_index;
 
     //开始绘画模板,完成创建后保存按钮使能
-    if(0==draw_show(false))
+    if(0==draw_show())
     {
         m_ini.write("Model_Score",m_fileName,model_score);
         //保存使能
@@ -507,10 +507,8 @@ void DialogShapeModel::on_combo_mark_Score_activated(const QString &arg1)
 void DialogShapeModel::on_pushButton_mark_confirm_clicked()
 {
     //开始绘画模板,完成创建后保存按钮使能
-    if(0==draw_show(true))
+    if(0==draw_show())
     {
-        //更改模板分数
-        m_ini.write("Mark_Model_Score",m_mark_fileName,mark_model_score);
         //保存使能
         ui->pushButtonCreateShapeModelMark->setEnabled(true);
     }
@@ -540,64 +538,67 @@ void DialogShapeModel::on_pushButtonCreateShapeModelMark_clicked()
 
 
 //模板创建过程与显示
-int DialogShapeModel::draw_show(bool isMark)
+int DialogShapeModel::draw_show()
 {
+    if(isDrawing)
+    {
+        print_qmess(QString("请完成当前模板绘制"));
+        return 0;
+    }
+
+    isDrawing=true;
     //提示画一个圆圈
+    clear_window(m_win_id);
+    disp_obj(m_image,m_win_id);
     set_color(m_win_id,"green");
-    set_line_width(m_win_id,3);
+    set_line_width(m_win_id,1);
     draw_circle(m_win_id,&m_create_row,&m_create_col,&m_create_radius);
     disp_circle(m_win_id,m_create_row,m_create_col,m_create_radius);
     gen_circle(&m_modelRegion, m_create_row,m_create_col,m_create_radius);
 
-    //Mark点使用环形区域建模
-    if(isMark)
-    {
-        double n_new_radius;
-        Hobject n_new_Region;
-        draw_circle(m_win_id,&m_create_row,&m_create_col,&n_new_radius);
-        disp_circle(m_win_id,m_create_row,m_create_col,n_new_radius);
-        gen_circle(&n_new_Region, m_create_row,m_create_col,n_new_radius);
-        if(m_create_radius>=n_new_radius)
-        {
-            difference(m_modelRegion,n_new_Region,&m_modelRegion);
-        }
-        else
-        {
-            difference(n_new_Region,m_modelRegion,&m_modelRegion);
-        }
-    }
-
-    copy_obj(m_image, &cpy_image, 1, 1);
-    reduce_domain(cpy_image, m_modelRegion, &m_templateImage);
+    Hobject Edges,UnionContours,SelectedContours;
+    Hobject Region,RegionUnion,Rectangle;
+    HTuple ContoursRow1,ContoursCol1,ContoursRow2,ContoursCol2;
+    HTuple ContoursArea,ContoursRow,ContoursCol;
     try{
-//        create_shape_model(m_templateImage,  6, HTuple(0).Rad(), HTuple(360).Rad(),
-//                           HTuple(0.5896).Rad(), (HTuple("point_reduction_high").Append("no_pregeneration")),
-//                           "use_polarity", ((HTuple(21).Append(49)).Append(14)), 11, &m_ModelID);
-        create_scaled_shape_model(m_templateImage,  6, HTuple(0).Rad(), HTuple(360).Rad(),
+        copy_obj(m_image, &cpy_image, 1, 1);
+        reduce_domain(cpy_image, m_modelRegion, &m_templateImage);
+        median_image(m_templateImage,&m_templateImage,"circle",6,"mirrored");
+        edges_sub_pix(m_templateImage,&Edges,"canny",1,20,40);
+        union_collinear_contours_xld(Edges,&UnionContours,10, 10, 5, 0.1, "attr_keep");
+        select_contours_xld(UnionContours, &SelectedContours, "contour_length", 40, 3000, -0.5, 0.5);
+
+        create_scaled_shape_model_xld(SelectedContours,  6, HTuple(0).Rad(), HTuple(360).Rad(),
                            HTuple(0.5896).Rad(),  0.8, 1.2,"auto",(HTuple("point_reduction_high").Append("no_pregeneration")),
-                           "use_polarity", ((HTuple(10).Append(49)).Append(14)), 11, &m_ModelID);
+                           "use_polarity", 11, &m_ModelID);
+
+        //设置模板锚点
+        gen_region_contour_xld(SelectedContours,&Region,"filled");
+        union1(Region,&RegionUnion);
+        smallest_rectangle1(RegionUnion,&ContoursRow1,&ContoursCol1,&ContoursRow2,&ContoursCol2);
+        gen_rectangle1(&Rectangle,ContoursRow1,ContoursCol1,ContoursRow2,ContoursCol2);
+        area_center(Rectangle,&ContoursArea,&ContoursRow,&ContoursCol);
+        area_center(m_modelRegion, &hv_ModelRegionArea, &hv_RefRow, &hv_RefColumn);
+        set_shape_model_origin(m_ModelID,hv_RefRow-ContoursRow,hv_RefColumn-ContoursCol);
+        //轮廓仿射变换
+        get_shape_model_contours (&m_ModelContours, m_ModelID, 1);
+        vector_angle_to_rigid(0, 0, 0, hv_RefRow, hv_RefColumn, 0, &hv_HomMat2D);
+        affine_trans_contour_xld(m_ModelContours, &m_TransContours, hv_HomMat2D);
+
+        //显示模板轮廓
+        disp_obj(cpy_image, m_win_id);
+        set_draw(m_win_id, "margin");
+        set_color(m_win_id, "red");
+        disp_obj(m_TransContours, m_win_id);
     }
     catch(...)
     {
-        print_qmess(QString("Create shape model failed!"));
+        print_qmess(QString("创建模板失败"));
         disp_image(m_templateImage,m_win_id);
         return -1;
     }
 
-    //轮廓仿射变换
-    get_shape_model_contours (&m_ModelContours, m_ModelID, 1);
-    area_center(m_modelRegion, &hv_ModelRegionArea, &hv_RefRow, &hv_RefColumn);
-    vector_angle_to_rigid(0, 0, 0, hv_RefRow, hv_RefColumn, 0, &hv_HomMat2D);
-    affine_trans_contour_xld(m_ModelContours, &m_TransContours, hv_HomMat2D);
-
-    //显示模板轮廓
-    disp_obj(cpy_image, m_win_id);
-    set_color(m_win_id, "green");
-    set_draw(m_win_id, "margin");
-    disp_obj(m_modelRegion, m_win_id);
-    set_color(m_win_id, "red");
-    disp_obj(m_TransContours, m_win_id);
-
+    isDrawing=false;
     return 0;
 }
 
@@ -616,7 +617,7 @@ int DialogShapeModel::save_templa_image(bool isMark)
         is_mkdir= dir1.mkdir(m_path_exe + "/matchImage/");
         if (false == is_mkdir)
         {
-            m_log.write_log("DialogShapeModel::save_templa_image(): the folder matchImage mkdir failed!");
+            m_log.write_log("DialogShapeModel::save_templa_image(): the folder matchImage mkdir failed!",true);
             return -2;
         }
     }
@@ -625,7 +626,7 @@ int DialogShapeModel::save_templa_image(bool isMark)
         is_mkdir = dir2.mkdir(m_path_exe + "/matchImage/");
         if (false == is_mkdir)
         {
-            m_log.write_log("DialogShapeModel::save_templa_image(): the folder matchImage mkdir failed!");
+            m_log.write_log("DialogShapeModel::save_templa_image(): the folder matchImage mkdir failed!",true);
             return -2;
         }
     }
@@ -648,7 +649,7 @@ int DialogShapeModel::save_templa_image(bool isMark)
     }
     catch (HException &except)
     {
-        m_log.write_log("DialogShapeModel::save_templa_image(): error!");
+        m_log.write_log("DialogShapeModel::save_templa_image(): error!",true);
         return -1;
     }
 
@@ -670,7 +671,7 @@ int DialogShapeModel::save_templa_image(bool isMark)
     }
     catch (HException &except)
     {
-        m_log.write_log("DialogShapeModel::save_templa_image(): write image failed!");
+        m_log.write_log("DialogShapeModel::save_templa_image(): write image failed!",true);
         return -3;
     }
 
@@ -756,7 +757,7 @@ void DialogShapeModel::on_listView_doubleClicked(const QModelIndex &index)
     }
     catch (HException &except)
     {
-        m_log.write_log("DialogShapeModel::on_listView_doubleClicked(): read image error!");
+        m_log.write_log("DialogShapeModel::on_listView_doubleClicked(): read image error!",true);
         return ;
     }
 
@@ -879,6 +880,7 @@ void DialogShapeModel::on_pushButton_Test_clicked()
     try
     {
         reduce_domain(m_image,m_modelRegion,&image);
+        median_image(image,&image,"circle",6,"mirrored");
 //        find_shape_model(m_image,  test_modelID, 0, dradRange , score, 1, 0.5,
 //                         "least_squares", 3, 0.9, &findRow, &findCol, &findAngle, &findScore);
         find_scaled_shape_model(image,  test_modelID, 0, dradRange , 0.8, 1.2, score, 3, 0.5,
@@ -912,6 +914,7 @@ void DialogShapeModel::on_pushButton_Test_clicked()
     set_draw(m_win_id, "margin");
     disp_obj(m_image, m_win_id);
     disp_obj(ShowContours, m_win_id);
+    disp_cross (m_win_id, findRow, findCol, 40, 0.78);
     //显示模板坐标
     disp_message (m_win_id, (("X="+(findCol.Select(0)))+"   Y=")+(findRow.Select(0)),\
                   "image", 40, 40, "green","true");

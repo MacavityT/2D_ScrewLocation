@@ -32,11 +32,6 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(&m_modbus,SIGNAL(signal_connect_button_status(bool)),this,SLOT(slot_connect_button_status(bool)));
     connect(&m_modbus,SIGNAL(signal_read_data(float,float,float,float,float,float,float)),\
             this,SLOT(slot_read_data(float,float,float,float,float,float,float)));
-    connect(this,SIGNAL(signal_setupDeviceData(float,float,float,float,float)),\
-            &m_modbus,SLOT(setupDeviceData(float,float,float,float,float)));
-    //发送结果标志位
-    connect(this,SIGNAL(signal_setupDeviceData(float,float,float,float,float)),\
-            this,SLOT(setupDeviceData(float,float,float,float,float)));
     //连接调试界面与通信类
     connect(&m_modbus,SIGNAL(signal_read_data(float,float,float,float,float,float,float)),\
             &m_setting_dialog,SLOT(slot_read_data(float,float,float,float,float,float,float)));
@@ -55,6 +50,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
 MainWindow::~MainWindow()
 {
+    delete m_mark_csv;
+    delete m_screw_csv;
     //回收心跳连接线程
     m_thread_heartbeat.terminate();
     m_thread_heartbeat.wait(0);
@@ -96,6 +93,8 @@ void MainWindow::closeEvent(QCloseEvent *event)
 //参数初始化
 int MainWindow::start_varia_init()
 {
+    m_mark_csv=new AQData(QString("Mark"), QString("Date-Moment,mark,xcoor,ycoor,pix-x,pix-y,offsetx,offsety,status\n"));
+    m_screw_csv=new AQData(QString("Screw"), QString("Date-Moment,threshold,modelIndex,screwdriver,screw,xcoor,ycoor,pix-x,pix-y,offsetx,offsety,exact_offset_x,exact_offset_y,x_diff,y_diff,xcoor_revert,ycoor_revert,x_work_diff,y_work_diff,status\n"));
     //exe文件所在路径
     m_path_exe = QCoreApplication::applicationDirPath();
     //cam 3840*2748,Camera size,如果参数写错可能导致图像显示错误
@@ -159,7 +158,7 @@ int MainWindow::hal_read_shape_model()
         bool is_mkdir = dir.mkdir(m_path_exe + "/match/");
         if (false == is_mkdir)
         {
-            m_log.write_log("MainWindow::hal_read_shape_model():the match folder mkdir fail!");
+            m_log.write_log("MainWindow::hal_read_shape_model():the match folder mkdir fail!",true);
             return -1;
         }
     }
@@ -206,11 +205,11 @@ int MainWindow::hal_read_shape_model()
             catch (HException &except)
             {
                 cerr<<except.err;
-                m_log.write_log("MainWindow::hal_read_shape_model(): read_shape_model error!");
+                m_log.write_log("MainWindow::hal_read_shape_model(): read_shape_model error!",true);
                 return -2;
             }
             //第几张map中的第几个位置，对应批头号和螺丝号
-            (m_ModelID[screw_driver_index.toInt()])[screw_index.toInt()] = modelID;
+            m_ModelID[screw_driver_index.toInt()][screw_index.toInt()] = modelID;
         }
         else
         {
@@ -232,7 +231,7 @@ int MainWindow::hal_read_mark_shape_model()
         bool is_mkdir = dir.mkdir(m_path_exe + "/match/");
         if (false == is_mkdir)
         {
-            m_log.write_log("MainWindow::hal_read_mark_shape_model():the match folder mkdir fail!");
+            m_log.write_log("MainWindow::hal_read_mark_shape_model():the match folder mkdir fail!",true);
             return -1;
         }
     }
@@ -257,7 +256,7 @@ int MainWindow::hal_read_mark_shape_model()
             catch (HException &except)
             {
                 cerr<<except.err;
-                m_log.write_log("MainWindow::hal_read_mark_shape_model(): read_shape_model error!");
+                m_log.write_log("MainWindow::hal_read_mark_shape_model(): read_shape_model error!",true);
                 return -2;
             }
             //模板对应
@@ -274,23 +273,34 @@ int MainWindow::hal_read_mark_shape_model()
 //图像显示
 int MainWindow::image_show(Hobject& Image,HTuple& findRow,HTuple& findCol,HTuple& offsetRow,HTuple& offsetCol,bool bState)
 {
+    Hobject showImage;
+    clear_window(m_win_id);
     //图像显示
     get_image_size(Image,&image_width,&image_height);
     set_part(m_win_id,0,0,image_height,image_width);
-    disp_obj(m_image,m_win_id);
+    reduce_domain(Image,m_region,&showImage);
+    disp_obj(showImage,m_win_id);
     if(bState == true)
     {
         set_draw(m_win_id,"margin");
         set_color(m_win_id,"green");
         set_line_width(m_win_id,3);
-        disp_cross (m_win_id, findRow[0].D(), findCol[0].D(), 40, 0.78);
-        disp_circle (m_win_id,findRow[0].D(), findCol[0].D(), 170);
+        disp_cross (m_win_id, findRow, findCol, 40, 0.78);
+        disp_circle (m_win_id,findRow, findCol, 170);
         set_display_font (m_win_id, 20, "mono", "true", "false");
 
         disp_message (m_win_id, "X = " + findCol + "  Offset_X=" + offsetCol,\
-                      "window", 40, 40, "green","true");
-        disp_message (m_win_id, "Y = " + findRow + "  Offset_Y=" + offsetRow,\
-                      "window", 90, 40, "green","true");
+                      "window", 0, 40, "green","true");
+        if(findCol.Num()>1)
+        {
+            disp_message (m_win_id, "Y = " + findRow + "  Offset_Y=" + offsetRow,\
+                          "window", 120, 40, "green","true");
+        }
+        else
+        {
+            disp_message (m_win_id, "Y = " + findRow + "  Offset_Y=" + offsetRow,\
+                          "window", 50, 40, "green","true");
+        }
     }
     else
     {
@@ -298,7 +308,7 @@ int MainWindow::image_show(Hobject& Image,HTuple& findRow,HTuple& findCol,HTuple
         set_color(m_win_id,"red");
         set_display_font (m_win_id, 20, "mono", "true", "false");
 
-        QString strQ("没发现匹配");
+        QString strQ("没发现匹配或位置错误");
         QByteArray ba = strQ.toLocal8Bit();
         char* ch = ba.data();
         HTuple ss = ch;
@@ -363,8 +373,7 @@ void MainWindow::on_pushButton_Start_clicked()
         DialogShapeModel::print_qmess(QString("Please connect to server!"));
         return;
     }
-    emit signal_setupDeviceData(NULL,NULL,0,NULL,NULL);//开始时先将拍照完成标志置0
-
+    m_modbus.setupDeviceData(NULL,NULL,0,NULL,NULL);//开始时先将拍照完成标志置0
     //加载模板
     hal_read_shape_model();
     hal_read_mark_shape_model();
@@ -396,7 +405,7 @@ void MainWindow::on_pushButton_Start_clicked()
     }
     catch(...)
     {
-        m_log.write_log("MainWindow::on_pushButton_Start_clicked():Read affine trans tuple failed!");
+        m_log.write_log("MainWindow::on_pushButton_Start_clicked():Read affine trans tuple failed!",true);
         return;
     }
     //读取标准点位(拍照位)
@@ -424,6 +433,16 @@ void MainWindow::on_pushButton_Start_clicked()
 //按钮：测试
 void MainWindow::on_pushButton_TestItem_clicked()
 {
+    QString fileName="C:\\Users\\TTY\\Desktop\\1.bmp";
+    QByteArray ba = fileName.toLocal8Bit();
+    char* ch = ba.data();
+    //读取并显示
+    read_image(&m_image, ch);
+
+//    hal_read_mark_shape_model();
+//    mark_process(4,1,1);
+    hal_read_shape_model();
+    screw_process(1,10,1,2);
 }
 
 //按钮：连接或断开PLC
@@ -520,7 +539,10 @@ void MainWindow::slot_read_data(float screwdriver, float screw, float enable, fl
         return;//程序未运行，接收数据不处理
     if(0.0==enable)
         return;//拍照禁止
-    IsResultSend=false;
+
+    m_log.write_log("Start Run",m_SaveData);
+    m_log.write_log("Screwdriver-"+QString::number(screwdriver)+" Screw-"+QString::number(screw)+" Mark-"+QString::number(mark)
+                    +" XCoor-"+QString::number(xcoor)+" YCoor-"+QString::number(ycoor),m_SaveData);
 
     if(mark!=0.0)
     {
@@ -533,17 +555,7 @@ void MainWindow::slot_read_data(float screwdriver, float screw, float enable, fl
         int screwInt=screw;
         screw_process(screwDriverInt,screwInt,xcoor,ycoor);
     }
-    if(!IsResultSend)
-    {
-        ui->textBrowser->append("Result send failed");
-    }
-}
-
-//发送数据
-void MainWindow::setupDeviceData(float x_coor,float y_coor,\
-                                       float complete,float heartbeat,float reserve)
-{
-    IsResultSend=true;
+    m_log.write_log("Stop Run",m_SaveData);
 }
 
 //Mark点流程
@@ -557,14 +569,14 @@ void MainWindow::mark_process(int mark ,float xcoor ,float ycoor)
     if(m_mark_ModelID.find(mark_index)==m_mark_ModelID.end())
     {
         ui->textBrowser->append(error_message+"The template is unexisted!\n");
-        emit signal_setupDeviceData(-1.0,-1.0,1.0,NULL,NULL);
+        m_modbus.setupDeviceData(-1.0,-1.0,1.0,NULL,NULL);
         return;
     }
     //开始处理
     if(0!=m_snap_cam.snap(0))
     {
         ui->textBrowser->append(error_message+"采集图像失败！\n");
-        emit signal_setupDeviceData(-1.0,-1.0,1.0,NULL,NULL);
+        m_modbus.setupDeviceData(-1.0,-1.0,1.0,NULL,NULL);
         return;
     }
     gen_image1(&m_image,"byte",m_snap_cam.m_cam_width,m_snap_cam.m_cam_height,(Hlong)m_snap_cam.pImageBuffer[0]);
@@ -584,7 +596,6 @@ void MainWindow::mark_process(int mark ,float xcoor ,float ycoor)
     int err = 0;
     Hobject tem_image;
     copy_image(m_image,&tem_image);
-
     err = image_process_mark(tem_image, m_mark_ModelID[mark],score,pix_x,pix_y);
     if(0 != err)
     {
@@ -594,11 +605,11 @@ void MainWindow::mark_process(int mark ,float xcoor ,float ycoor)
         HTuple offsetY=0.0;
         image_show(m_image,py,px,offsetY,offsetX,false);
         ui->textBrowser->append(error_message+"定位Mark点失败!\n");
-        emit signal_setupDeviceData(-1.0,-1.0,1.0,NULL,NULL);
+        m_modbus.setupDeviceData(-1.0,-1.0,1.0,NULL,NULL);
         //图像-原图保存-处理后截图保存
-        image_save(m_image,true,true);
+        image_save(m_image,error_message,true,true);
         //写入时间及坐标
-        m_data_file_csv.data_write(pix_x,pix_y,m_SaveData);
+        m_mark_csv->data_write(mark,xcoor,ycoor,0,0,0,0,"Can't find mark",true);
         return;
     }
 
@@ -611,11 +622,11 @@ void MainWindow::mark_process(int mark ,float xcoor ,float ycoor)
         HTuple offsetY=0.0;
         image_show(m_image,py,px,offsetY,offsetX,false);
         ui->textBrowser->append(error_message+"cal_offset_mark失败!!\n");
-        emit signal_setupDeviceData(-1.0,-1.0,1.0,NULL,NULL);
+        m_modbus.setupDeviceData(-1.0,-1.0,1.0,NULL,NULL);
         //图像-原图保存-处理后截图保存
-        image_save(m_image,true,true);
+        image_save(m_image,error_message,true,true);
         //写入时间及坐标
-        m_data_file_csv.data_write(pix_x,pix_y,m_SaveData);
+        m_mark_csv->data_write(mark,xcoor,ycoor,0,0,0,0,"HomMat calculate failed",true);
         return;
     }
 
@@ -629,6 +640,7 @@ void MainWindow::mark_process(int mark ,float xcoor ,float ycoor)
         try
         {
             vector_to_hom_mat2d(mark_x_1,mark_y_1,mark_x_2,mark_y_2,&HomMat2DRunTime);
+            vector_to_hom_mat2d(mark_x_2,mark_y_2,mark_x_1,mark_y_1,&HomMat2DRevertRunTime);
 
             if(m_SaveResult)
             {
@@ -641,7 +653,8 @@ void MainWindow::mark_process(int mark ,float xcoor ,float ycoor)
         catch(...)
         {
             ui->textBrowser->append(QString("Calculate failed!"));
-            emit signal_setupDeviceData(-1.0,-1.0,1.0,NULL,NULL);
+            m_modbus.setupDeviceData(-1.0,-1.0,1.0,NULL,NULL);
+            m_mark_csv->data_write(mark,xcoor,ycoor,0,0,0,0,"Generate mark HomMat2D failed",true);
             return;
         }
     }
@@ -658,7 +671,7 @@ void MainWindow::mark_process(int mark ,float xcoor ,float ycoor)
     }
 
     //发送完成信号
-    emit signal_setupDeviceData(NULL,NULL,1.0,NULL,NULL);
+    m_modbus.setupDeviceData(NULL,NULL,1.0,NULL,NULL);
     //显示当前图片
     HTuple px = HTuple(pix_x);
     HTuple py = HTuple(pix_y);
@@ -666,7 +679,9 @@ void MainWindow::mark_process(int mark ,float xcoor ,float ycoor)
     HTuple offsetY=HTuple(offset_y);
     image_show(m_image,py,px,offsetY,offsetX,true);
     //图像-原图保存-处理后截图保存
-    image_save(m_image,m_SaveRaw,m_SaveResult);
+    image_save(m_image,error_message,m_SaveRaw,m_SaveResult);
+    //保存结果
+    m_mark_csv->data_write(mark,xcoor,ycoor,pix_x,pix_y,offset_x,offset_y,"OK",m_SaveData);
 }
 
 void MainWindow::screw_process(int screwdriver, int screw, float xcoor, float ycoor)
@@ -676,14 +691,16 @@ void MainWindow::screw_process(int screwdriver, int screw, float xcoor, float yc
     if(length<=0)
     {
         ui->textBrowser->append("仿射变换矩阵(Runtime)不存在！");
-        return;
+//        return;
     }
 
+    x_coor=0;
+    y_coor=0;
     //准备错误信息
     QString error_message;
     QString wrong_screwdriver;
     QString wrong_screw;
-    error_message=wrong_screwdriver.setNum(screwdriver)+'_'+wrong_screw.setNum(screw)+": ";
+    error_message="Screw"+wrong_screwdriver.setNum(screwdriver)+'-'+wrong_screw.setNum(screw)+": ";
     //判断模板是否存在
     int screwdriver_index=screwdriver;
     int screw_index=screw;
@@ -692,86 +709,26 @@ void MainWindow::screw_process(int screwdriver, int screw, float xcoor, float yc
          (m_ModelID[screwdriver_index]).find(screw_index)==(m_ModelID[screwdriver_index]).end())
     {
         ui->textBrowser->append(error_message+"The template is unexisted!\n");
-        emit signal_setupDeviceData(-1.0,-1.0,1.0,NULL,NULL);
+        m_modbus.setupDeviceData(-1.0,-1.0,1.0,NULL,NULL);
         return;
     }
 
-    //开始处理
-    if(0!=m_snap_cam.snap(0))
-    {
-        ui->textBrowser->append(error_message+"采集图像失败！\n");
-        emit signal_setupDeviceData(-1.0,-1.0,1.0,NULL,NULL);
-        return;
-    }
-    gen_image1(&m_image,"byte",m_snap_cam.m_cam_width,m_snap_cam.m_cam_height,(Hlong)m_snap_cam.pImageBuffer[0]);
-    //image process
+    //图像坐标及偏移量初始化
     double pix_x[3]={0.0,0.0,0.0};
     double pix_y[3]={0.0,0.0,0.0};
     double offset_x[3]={0.0,0.0,0.0};
     double offset_y[3]={0.0,0.0,0.0};
 
-    //Get find model score
+    //模板分数初始化
     double score=0;
     QString driver_trans,screw_trans;
     driver_trans.setNum(screwdriver_index);
     screw_trans.setNum(screw_index);
     QString key=driver_trans+'_'+screw_trans;
     m_ini.read("Model_Score",key,score);
-    if(score==0)
-        score=0.5;
+    if(score==0) score=0.5;
 
-    int err = 0;
-    Hobject tem_image;
-    copy_image(m_image,&tem_image);
-
-    err = image_process_screw(tem_image, (m_ModelID[screwdriver_index])[screw_index],score,pix_x,pix_y);
-    if(0 != err)
-    {
-        HTuple px = 0.0;
-        HTuple py = 0.0;
-        HTuple offsetX=0.0;
-        HTuple offsetY=0.0;
-        image_show(m_image,py,px,offsetY,offsetX,false);
-        ui->textBrowser->append(error_message+"定位螺丝失败!\n");
-        emit signal_setupDeviceData(-1.0,-1.0,1.0,NULL,NULL);
-        //图像-原图保存-处理后截图保存
-        image_save(m_image,true,true);
-        return;
-    }
-
-    err = cal_offset_screw(pix_x,pix_y,offset_x,offset_y);//返回的offset值为当前识别物理位置与记录的标准上螺丝物理位置的偏移量
-    if(0 != err)
-    {
-        HTuple px = 0.0;
-        HTuple py = 0.0;
-        HTuple offsetX=0.0;
-        HTuple offsetY=0.0;
-        image_show(m_image,py,px,offsetY,offsetX,false);
-        ui->textBrowser->append(error_message+"cal_offset_screw失败!!\n");
-        emit signal_setupDeviceData(-1.0,-1.0,1.0,NULL,NULL);
-        //图像-原图保存-处理后截图保存
-        image_save(m_image,true,true);
-        return;
-    }
-
-    //使用动态仿射矩阵计算准确位置，并进行对比
-    double exact_offset_x,exact_offset_y;
-    try
-    {
-        double x1,y1,x2,y2;
-        x1=xcoor;
-        y1=ycoor;
-        affine_trans_point_2d(HomMat2DRunTime,x1,y1,&x2,&y2);
-
-        exact_offset_x=x2-x1;
-        exact_offset_y=y2-y1;
-    }
-    catch(...)
-    {
-        ui->textBrowser->append(QString("Calculate coordinate failed!"));
-    }
-
-    //结果验证
+    //偏移量差值初始化
     double x_diff[3]={0.0,0.0,0.0},y_diff[3]={0.0,0.0,0.0};
     double x_offsetMin=0,x_offsetMax=0,y_offsetMin=0,y_offsetMax=0;
     x_offsetMin=m_cal_data.Offset.x<-(m_cal_data.Offset.x)? m_cal_data.Offset.x:-(m_cal_data.Offset.x);
@@ -779,77 +736,213 @@ void MainWindow::screw_process(int screwdriver, int screw, float xcoor, float yc
     y_offsetMin=m_cal_data.Offset.y<-(m_cal_data.Offset.y)? m_cal_data.Offset.y:-(m_cal_data.Offset.y);
     y_offsetMax=m_cal_data.Offset.y>-(m_cal_data.Offset.y)? m_cal_data.Offset.y:-(m_cal_data.Offset.y);
 
-    int num=3;
-    bool status=false;
-    int index=0;
-    for(int i=0;i<num;i++)
-    {
-        x_diff[i]=exact_offset_x-offset_x[i];
-        y_diff[i]=exact_offset_y-offset_y[i];
+    //使用动态仿射矩阵计算准确位置，并进行对比
+    double exact_offset_x,exact_offset_y;
+//    try
+//    {
+//        double x1,y1,x2,y2;
+//        x1=xcoor;
+//        y1=ycoor;
+//        affine_trans_point_2d(HomMat2DRunTime,x1,y1,&x2,&y2);
 
-        if(x_diff[i]>x_offsetMin && x_diff[i]<x_offsetMax && y_diff[i]>y_offsetMin && y_diff[i]<y_offsetMax)
+//        exact_offset_x=x2-x1;
+//        exact_offset_y=y2-y1;
+//    }
+//    catch(...)
+//    {
+//        ui->textBrowser->append(QString("Calculate coordinate failed!"));
+//    }
+
+    //采集图像
+//    if(0!=m_snap_cam.snap(0))
+//    {
+//        ui->textBrowser->append(error_message+"采集图像失败！\n");
+//        m_modbus.setupDeviceData(-1.0,-1.0,1.0,NULL,NULL);
+//        return;
+//    }
+//    gen_image1(&m_image,"byte",m_snap_cam.m_cam_width,m_snap_cam.m_cam_height,(Hlong)m_snap_cam.pImageBuffer[0]);
+
+    //开始处理
+    bool status=false;
+    int image_err = 0;
+    int calculate_err = 0;
+    int modelIndex=0;
+    int modelIndexMax=2;
+    int useModelIndex=-1;
+    int success_index=0;
+    double wrong_position_x[18]={0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
+    double wrong_position_y[18]={0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
+    int wrong_index=0;
+
+    for(modelIndex=0;modelIndex<modelIndexMax;modelIndex++)
+    {
+        //遍历最多3次模板
+        if(modelIndex==0)
         {
-            x_coor=offset_x[i];
-            y_coor=offset_y[i];
-            emit signal_setupDeviceData(x_coor,y_coor,1.0,NULL,NULL);
-            index=i;
-            status=true;
+            useModelIndex=screw_index;
         }
+        else
+        {
+            //如果当前螺丝是前2颗，则向后找一颗
+            if(modelIndex==screw_index)
+            {
+                modelIndex++;
+                modelIndexMax++;
+                useModelIndex=modelIndex;
+            }
+
+            if((m_ModelID[screwdriver_index]).find(useModelIndex)==(m_ModelID[screwdriver_index]).end())
+            {
+                useModelIndex=-1;
+            }
+        }
+
+        if(useModelIndex==-1)
+        {
+            break;
+        }
+
+        //正式处理
+        Hobject tem_image,Regions;
+        for(int i=-1;i<1;i++)
+        {
+            if(i==-1)
+            {
+                copy_image(m_image,&tem_image);
+                median_image(tem_image,&tem_image,"circle",6,"mirrored");
+            }
+            else
+            {
+                //预处理--1次不同程度二值化
+                median_image(m_image,&tem_image,"circle",6,"mirrored");
+                threshold(tem_image,&Regions,70+i*10,255);
+                region_to_bin(Regions,&tem_image,255,0,2592,1944);
+            }
+
+            image_err = image_process_screw(tem_image, (m_ModelID[screwdriver_index])[useModelIndex],score,pix_x,pix_y);
+            if(0 == image_err)
+            {
+                //返回的offset值为当前识别物理位置与记录的标准上螺丝物理位置的偏移量
+                calculate_err = cal_offset_screw(pix_x,pix_y,offset_x,offset_y);
+                if(0 == calculate_err)
+                {
+                    for(int i=0;i<3;i++)
+                    {
+                        x_diff[i]=exact_offset_x-offset_x[i];
+                        y_diff[i]=exact_offset_y-offset_y[i];
+
+                        wrong_position_x[wrong_index]=pix_x[i];
+                        wrong_position_y[wrong_index]=pix_y[i];
+                        wrong_index++;
+
+                        //过程数据保存
+                        for(int n=0;n<3;n++)
+                        {
+                            m_screw_csv->data_write(60+i*10,modelIndex,screwdriver,screw,xcoor,ycoor,pix_x[n],pix_y[n],
+                                                   offset_x[n],offset_y[n],exact_offset_x,exact_offset_y,x_diff[n],y_diff[n],
+                                                    0,0,0,0,"process data",m_SaveData);
+                        }
+
+                        if(x_diff[i]>x_offsetMin && x_diff[i]<x_offsetMax && y_diff[i]>y_offsetMin && y_diff[i]<y_offsetMax)
+                        {
+                            x_coor=offset_x[i];
+                            y_coor=offset_y[i];
+                            m_modbus.setupDeviceData(x_coor,y_coor,1.0,NULL,NULL);
+                            success_index=i;
+                            status=true;
+                            //结果OK，跳出计算偏差值循环
+                            break;
+                        }
+                    }
+                    //结果OK，跳出预处理循环
+                    if(status) break;
+                }
+                else
+                {
+                    //计算失败，数据保存
+                    for(int n=0;n<3;n++)
+                    {
+                        std::cout << "num: " << n << std::endl;
+                        m_screw_csv->data_write(60+i*10,modelIndex,screwdriver,screw,xcoor,ycoor,pix_x[n],pix_y[n],
+                                               offset_x[n],offset_y[n],exact_offset_x,exact_offset_y,x_diff[n],y_diff[n],
+                                               0,0,0,0,"Calculate failed",true);
+                    }
+                }
+            }
+            else
+            {
+                //找不到螺丝，数据保存
+                for(int n=0;n<3;n++)
+                {
+                    m_screw_csv->data_write(60+i*10,modelIndex,screwdriver,screw,xcoor,ycoor,pix_x[n],pix_y[n],
+                                           offset_x[n],offset_y[n],exact_offset_x,exact_offset_y,x_diff[n],y_diff[n],
+                                           0,0,0,0,"Can't find screw.",true);
+                }
+            }
+        }
+        //结果OK，跳出模板遍历循环
+        if(status) break;
     }
-    //显示错误信息
+
+    //结果显示及保存
     if(!status)
     {
-        QString xDiff,yDiff;
-        ui->textBrowser->append(error_message+"XExactOffset="+xDiff.setNum(exact_offset_x));
-        ui->textBrowser->append(error_message+"YExactOffset="+yDiff.setNum(exact_offset_y));
-        for(int j=0;j<num;j++)
-        {
-            ui->textBrowser->append(error_message+"XScrewOffset="+xDiff.setNum(offset_x[j]));
-            ui->textBrowser->append(error_message+"YScrewOffset="+yDiff.setNum(offset_y[j]));
+        HTuple px;
+        HTuple py;
+        HTuple offsetX=0.0;
+        HTuple offsetY=0.0;
 
-            ui->textBrowser->append(error_message+"XDifference="+xDiff.setNum(x_diff[j]));
-            ui->textBrowser->append(error_message+"YDifference="+yDiff.setNum(y_diff[j]));
+        int hv_Index=0;
+        for(int i=0;i<18;i++)
+        {
+            if(wrong_position_x[i]!=0.0)
+            {
+                px[hv_Index]=wrong_position_x[i];
+                py[hv_Index]=wrong_position_y[i];
+                hv_Index++;
+            }
+        }
+        if(px.Num()==0)
+        {
+            px=0.0;
+            py=0.0;
         }
 
-        HTuple px,py,offsetX,offsetY;
-        for(int m=0;m<num;m++)
-        {
-            px[m]=pix_x[m];
-            py[m]=pix_y[m];
-            offsetX[m]=offset_x[m];
-            offsetY[m]=offset_y[m];
-        }
         image_show(m_image,py,px,offsetY,offsetX,true);
         //图像-原图保存-处理后截图保存
-        image_save(m_image,true,true);
-        ui->textBrowser->append(error_message+"螺丝位置错误!!\n");
-        emit signal_setupDeviceData(-1.0,-1.0,1.0,NULL,NULL);
+        image_save(m_image,error_message,true,true);
+        ui->textBrowser->append(error_message+"没发现匹配或位置错误!!\n");
+        m_modbus.setupDeviceData(-1.0,-1.0,1.0,NULL,NULL);
+        //保存参数
+        for(int n=0;n<3;n++)
+        {
+            m_screw_csv->data_write(-1,-1,screwdriver,screw,xcoor,ycoor,pix_x[n],pix_y[n],
+                                   offset_x[n],offset_y[n],exact_offset_x,exact_offset_y,x_diff[n],y_diff[n],
+                                    0,0,0,0,"Can't find screw or wrong position",true);
+        }
     }
     else
     {
         //显示当前图片
-        HTuple px = HTuple(pix_x[index]);
-        HTuple py = HTuple(pix_y[index]);
-        HTuple offsetX=HTuple(offset_x[index]);
-        HTuple offsetY=HTuple(offset_y[index]);
+        HTuple px = HTuple(pix_x[success_index]);
+        HTuple py = HTuple(pix_y[success_index]);
+        HTuple offsetX=HTuple(offset_x[success_index]);
+        HTuple offsetY=HTuple(offset_y[success_index]);
         image_show(m_image,py,px,offsetY,offsetX,true);
         //图像-原图保存-处理后截图保存
-        image_save(m_image,m_SaveRaw,m_SaveResult);
-    }
-
-    //计算结果保存至param.ini
-    if(m_SaveResult||!status)
-    {
-        error_message=error_message.replace(":"," ");
-        m_ini.write("Runtime",error_message+QString("xcoor"),xcoor);
-        m_ini.write("Runtime",error_message+QString("ycoor"),ycoor);
-        for(int k=0;k<num;k++)
-        {
-            m_ini.write("Runtime",error_message+QString("offsetX"),offset_x[k]);
-            m_ini.write("Runtime",error_message+QString("offsetY"),offset_y[k]);
-        }
-        m_ini.write("Runtime",error_message+QString("ExactX"),exact_offset_x);
-        m_ini.write("Runtime",error_message+QString("ExactY"),exact_offset_y);
+        image_save(m_image,error_message,m_SaveRaw,m_SaveResult);
+        //反算当前拍照点的正确位置
+        double xcoor_revert,ycoor_revert;
+        double x_work_diff,y_work_diff;
+        double x_work=xcoor+offset_x[success_index];
+        double y_work=ycoor+offset_y[success_index];
+        affine_trans_point_2d(HomMat2DRevertRunTime,x_work,y_work,&xcoor_revert,&ycoor_revert);
+        x_work_diff=xcoor_revert-xcoor;
+        y_work_diff=ycoor_revert-ycoor;
+        //保存坐标
+        m_screw_csv->data_write(-1,-1,screwdriver,screw,xcoor,ycoor,pix_x[success_index],pix_y[success_index],
+                               offset_x[success_index],offset_y[success_index],exact_offset_x,exact_offset_y,x_diff[success_index],y_diff[success_index],
+                               xcoor_revert,ycoor_revert,x_work_diff,y_work_diff,"OK",m_SaveData);
     }
 }
 
@@ -857,9 +950,9 @@ void MainWindow::screw_process(int screwdriver, int screw, float xcoor, float yc
 int MainWindow::image_process_mark(Hobject& Image,Hlong model_id,double score,double& pix_x,double& pix_y)
 {
     HTuple findRow,findCol,findAngle,findScale,findScore;
-
     double dradRange = HTuple(360).Rad()[0].D();
     reduce_domain(Image,m_region,&Image);
+    median_image(Image,&Image,"circle",6,"mirrored");
     find_scaled_shape_model(Image,  model_id, 0, dradRange , 0.8, 1.2, score, 1, 0.5,
                      "least_squares", 5, 0.3, &findRow, &findCol, &findAngle, &findScale, &findScore);
 
@@ -878,6 +971,7 @@ int MainWindow::image_process_screw(Hobject& Image,Hlong model_id,double score,d
     HTuple findRow,findCol,findAngle,findScale,findScore;
 
     double dradRange = HTuple(360).Rad()[0].D();
+    reduce_domain(Image,m_region,&Image);
     find_scaled_shape_model(Image,  model_id, 0, dradRange , 0.8, 1.2, score, 3, 0.5,
                      "least_squares", 5, 0.3, &findRow, &findCol, &findAngle, &findScale, &findScore);
 
@@ -949,8 +1043,9 @@ int MainWindow::cal_offset_screw(double x[],double y[],double world_offset_x[], 
 }
 
 //图片保存（原图及处理后图片，处理后图片为屏幕截图）
-int MainWindow::image_save(Hobject& Image, bool bIsSaveRaw,bool bIsSaveResult)
+int MainWindow::image_save(Hobject& Image,QString name, bool bIsSaveRaw,bool bIsSaveResult)
 {
+    name=name.replace(":","");
     //获取当前保存的日期&&时间精确到ms
     QDateTime current_date_time = QDateTime::currentDateTime();
     QString current_date =current_date_time.toString("yyyy-MM-dd");
@@ -966,7 +1061,7 @@ int MainWindow::image_save(Hobject& Image, bool bIsSaveRaw,bool bIsSaveResult)
         bool is_created = image_dir_raw.mkpath(m_path_exe + "/ImageRaw/" + current_date);
         if (false == is_created)
         {
-            m_log.write_log("MainWindow::image_save(): the folder ImageRaw created failed!");
+            m_log.write_log("MainWindow::image_save(): the folder ImageRaw created failed!",true);
             return -1;
         }
     }
@@ -976,13 +1071,13 @@ int MainWindow::image_save(Hobject& Image, bool bIsSaveRaw,bool bIsSaveResult)
         bool is_created = image_dir_res.mkpath(m_path_exe + "/ImageResult/" + current_date);
         if (false == is_created)
         {
-            m_log.write_log("MainWindow::image_save(): the folder ImageResult created failed!");
+            m_log.write_log("MainWindow::image_save(): the folder ImageResult created failed!",true);
             return -2;
         }
     }
 
     //write image
-    QString image_path = image_dir_raw.filePath("./") + current_date_time.toString("hh_mm_ss_zzz");
+    QString image_path = image_dir_raw.filePath("./") + current_date_time.toString("hh_mm_ss_zzz") + "--" +name;
     QByteArray ba = image_path.toLatin1(); // must
     char* ch = ba.data();
     if( true == bIsSaveRaw )
@@ -995,12 +1090,12 @@ int MainWindow::image_save(Hobject& Image, bool bIsSaveRaw,bool bIsSaveResult)
         catch (HException &except)
         {
             cerr<<except.err;
-            m_log.write_log("MainWindow::image_save(): write image1 failed!");
+            m_log.write_log("MainWindow::image_save(): write image1 failed!",true);
             return -3;
         }
     }
 
-    image_path = image_dir_res.filePath("./") + current_date_time.toString("hh_mm_ss_zzz");
+    image_path = image_dir_res.filePath("./") + current_date_time.toString("hh_mm_ss_zzz") + "--" + name ;
     ba = image_path.toLocal8Bit();
     ch = ba.data();
 
@@ -1017,7 +1112,7 @@ int MainWindow::image_save(Hobject& Image, bool bIsSaveRaw,bool bIsSaveResult)
        catch (HException &except)
        {
            cerr<<except.err;
-           m_log.write_log("MainWindow::image_save(): write image2 failed!");
+           m_log.write_log("MainWindow::image_save(): write image2 failed!",true);
            return -4;
        }
     }

@@ -57,8 +57,10 @@ aqlog::~aqlog()
     delete m_file;
 }
 
-int aqlog::write_log(QString str)
+int aqlog::write_log(QString str,bool enable)
 {
+    if(!enable) return 0;
+
     QString content = QDateTime::currentDateTime().toString("yyyy.MM.dd hh:mm:ss:zzz") + ",";
     content += str + "\n";
 

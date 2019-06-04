@@ -198,7 +198,7 @@
       </font>
      </property>
      <property name="text">
-      <string>保存坐标</string>
+      <string>保存数据</string>
      </property>
     </widget>
     <widget class="QPushButton" name="pushButton_SaveResult">

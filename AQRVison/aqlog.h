@@ -1,4 +1,4 @@
-#ifndef AQLOG_H
+﻿#ifndef AQLOG_H
 #define AQLOG_H
 
 #include <QFile>
@@ -12,7 +12,7 @@ class aqlog
 public:
     aqlog();
     ~aqlog();
-    int write_log(QString str);
+    int write_log(QString str,bool enable);
 private:
 
     QFile* m_file;

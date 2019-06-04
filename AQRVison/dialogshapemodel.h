@@ -35,7 +35,7 @@ public:
     void refresh_list();
     void deleteFile();
 
-    int draw_show(bool isMark);
+    int draw_show();
     int save_templa_image(bool isMark);
     //相机初始化
     int cam_init(basler_cam* ptr_cam);
@@ -108,6 +108,7 @@ private:
 
     //mark点编号
     double mark_model_score=0.0;
+    bool isDrawing=false;
 
     //list view列表所使用字段
     QStandardItemModel *standardItemModel;

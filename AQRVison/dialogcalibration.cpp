@@ -275,7 +275,7 @@ void Dialog::on_pushButtonCalibra_clicked()
         bool is_mkdir = dir.mkdir(m_path_exe + "/cal/");
         if (false == is_mkdir)
         {
-            m_log.write_log("Calibration::write calibration tuple(): the folder cal mkdir failed!");
+            m_log.write_log("Calibration::write calibration tuple(): the folder cal mkdir failed!",true);
             return;
         }
     }

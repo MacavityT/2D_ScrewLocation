@@ -11,6 +11,7 @@
 #include <vector>
 #include <math.h>
 #include <bitset>
+#include "aqlog.h"
 
 #include "inifile.h"
 
@@ -56,6 +57,8 @@ private:
     QModbusTcpServer *modbusDevice;
     //Control object
     IniFile m_ini_reader;
+    //报错管理
+    aqlog m_log;
     //read&write data
     quint16 value;
     QModbusDataUnit m_data;

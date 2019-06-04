@@ -184,7 +184,10 @@ void modbus_tcp_server::updateWidgets(QModbusDataUnit::RegisterType table, int a
     float xcoor=quint_to_float(data_array[5],10);
     float ycoor=quint_to_float(data_array[6],12);
     if(receive==1.0)
+    {
+        m_log.write_log("Modbus Receive clean signale from PLC",true);
         setupDeviceData(0,0,0,0,0);
+    }
     //触发检测函数
     emit signal_read_data(screwdriver,screw,enable,receive,mark,xcoor,ycoor);
 }
@@ -210,6 +213,7 @@ int modbus_tcp_server::setupDeviceData(float x_coor,float y_coor,\
     //数据发送
     modbusDevice->setData(write_data);
 
+    m_log.write_log("Modbus Send Data Finish: XOffset-"+QString::number(x_coor)+" YOffset-"+QString::number(y_coor)+" Complete-"+QString::number(complete),true);
     return 0;
 }
 

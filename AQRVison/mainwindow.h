@@ -57,11 +57,11 @@ public:
 
     void closeEvent(QCloseEvent *event);
 public:
-    bool IsResultSend=false;
     //运行标志位
     static bool Runtime;
     //data模块
-    AQData m_data_file_csv;
+    AQData* m_mark_csv;
+    AQData* m_screw_csv;
     //采集模块
     basler_cam m_snap_cam;
     int m_cam_width,m_cam_height;
@@ -77,7 +77,7 @@ public:
     bool m_SaveRaw=false;
     bool m_SaveResult=false;
     bool m_SaveData=false;
-    int image_save(Hobject& Image, bool bIsSaveRaw,bool bIsSaveResult);
+    int image_save(Hobject& Image,QString name, bool bIsSaveRaw,bool bIsSaveResult);
     //报错管理
     aqlog m_log;
     //通讯模块
@@ -97,6 +97,7 @@ public:
     map<int,Hlong> m_mark_ModelID;
     //运行计算
     HTuple HomMat2DRunTime;
+    HTuple HomMat2DRevertRunTime;
     HTuple mark_x_1,mark_y_1;
     HTuple mark_x_2,mark_y_2;
     //Hal 视觉部分初始化；视觉参数初始化
@@ -119,8 +120,6 @@ private:
     Ui::MainWindow *ui;
 
 signals:
-    void signal_setupDeviceData(float x_coor,float y_coor,\
-                                float complete,float heartbeat,float reserve); //与modbus类交互
     void signal_heartbeat_sender_control(modbus_tcp_server*);//控制线程发出心跳信号，由modbus类接收并setdata
 
 public slots:
@@ -128,7 +127,6 @@ public slots:
     void slot_read_data(float screwdriver,float screw,\
                         float enable,float receive,float mark,float xcoor,float ycoor);
     void slot_connect_button_status(bool connected);
-    void setupDeviceData(float x_coor,float y_coor,float complete,float heartbeat,float reserve);
 
 private slots:
     void on_pushButton_Connect_clicked();
