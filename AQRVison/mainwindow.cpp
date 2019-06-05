@@ -10,6 +10,8 @@
 
 using namespace Halcon;
 
+int save_index=0;
+
 bool MainWindow::Runtime=false;
 ////界面构造及初始化
 MainWindow::MainWindow(QWidget *parent) :
@@ -273,48 +275,66 @@ int MainWindow::hal_read_mark_shape_model()
 //图像显示
 int MainWindow::image_show(Hobject& Image,HTuple& findRow,HTuple& findCol,HTuple& offsetRow,HTuple& offsetCol,bool bState)
 {
-    Hobject showImage;
-    clear_window(m_win_id);
-    //图像显示
-    get_image_size(Image,&image_width,&image_height);
-    set_part(m_win_id,0,0,image_height,image_width);
-    reduce_domain(Image,m_region,&showImage);
-    disp_obj(showImage,m_win_id);
-    if(bState == true)
+    try
     {
-        set_draw(m_win_id,"margin");
-        set_color(m_win_id,"green");
-        set_line_width(m_win_id,3);
-        disp_cross (m_win_id, findRow, findCol, 40, 0.78);
-        disp_circle (m_win_id,findRow, findCol, 170);
-        set_display_font (m_win_id, 20, "mono", "true", "false");
-
-        disp_message (m_win_id, "X = " + findCol + "  Offset_X=" + offsetCol,\
-                      "window", 0, 40, "green","true");
-        if(findCol.Num()>1)
+        Hobject showImage;
+        HTuple Radius;
+        clear_window(m_win_id);
+        //图像显示
+        get_image_size(Image,&image_width,&image_height);
+        set_part(m_win_id,0,0,image_height,image_width);
+        reduce_domain(Image,m_dynamic_region,&showImage);
+        disp_obj(showImage,m_win_id);
+        if(bState == true)
         {
-            disp_message (m_win_id, "Y = " + findRow + "  Offset_Y=" + offsetRow,\
-                          "window", 120, 40, "green","true");
+            set_draw(m_win_id,"margin");
+            set_color(m_win_id,"green");
+            set_line_width(m_win_id,3);
+
+            if(findRow.Num() > 0)
+            {
+                disp_cross (m_win_id, findRow, findCol, 40, 0.78);
+                for (int i=0;i<findRow.Num();i++)
+                {
+                    Radius=Radius.Append(170);
+                }
+                disp_circle (m_win_id,findRow, findCol, Radius);
+            }
+
+            set_display_font (m_win_id, 20, "mono", "true", "false");
+
+            disp_message (m_win_id, "X = " + findCol + "  Offset_X=" + offsetCol,\
+                          "window", 0, 40, "green","true");
+            if(findCol.Num()>1)
+            {
+                disp_message (m_win_id, "Y = " + findRow + "  Offset_Y=" + offsetRow,\
+                              "window", 120, 40, "green","true");
+            }
+            else
+            {
+                disp_message (m_win_id, "Y = " + findRow + "  Offset_Y=" + offsetRow,\
+                              "window", 50, 40, "green","true");
+            }
         }
         else
         {
-            disp_message (m_win_id, "Y = " + findRow + "  Offset_Y=" + offsetRow,\
-                          "window", 50, 40, "green","true");
+            set_draw(m_win_id,"margin");
+            set_color(m_win_id,"red");
+            set_display_font (m_win_id, 20, "mono", "true", "false");
+
+            QString strQ("没发现匹配或位置错误");
+            QByteArray ba = strQ.toLocal8Bit();
+            char* ch = ba.data();
+            HTuple ss = ch;
+
+            disp_message (m_win_id, ss, "image", 40, 40,
+                         "red","false");
         }
     }
-    else
+    catch(HException &except)
     {
-        set_draw(m_win_id,"margin");
-        set_color(m_win_id,"red");
-        set_display_font (m_win_id, 20, "mono", "true", "false");
-
-        QString strQ("没发现匹配或位置错误");
-        QByteArray ba = strQ.toLocal8Bit();
-        char* ch = ba.data();
-        HTuple ss = ch;
-
-        disp_message (m_win_id, ss, "image", 40, 40,
-                     "red","false");
+        QString message = QString(except.message)+QString::number(findRow.Num())+QString(",")+QString::number(findCol.Num());
+        DialogShapeModel::print_qmess(message);
     }
     return 0;
 }
@@ -371,7 +391,7 @@ void MainWindow::on_pushButton_Start_clicked()
     if(!connection_status)
     {
         DialogShapeModel::print_qmess(QString("Please connect to server!"));
-        return;
+        if(!DebugEnable) return;
     }
     m_modbus.setupDeviceData(NULL,NULL,0,NULL,NULL);//开始时先将拍照完成标志置0
     //加载模板
@@ -394,7 +414,7 @@ void MainWindow::on_pushButton_Start_clicked()
     if(false == qfile.exists())
     {
         DialogShapeModel::print_qmess(QString("cann't find affine trans tuple file!"));
-        return;
+        if(!DebugEnable) return;
     }
     char *ch;
     QByteArray ba = mat_file.toLatin1();
@@ -406,6 +426,26 @@ void MainWindow::on_pushButton_Start_clicked()
     catch(...)
     {
         m_log.write_log("MainWindow::on_pushButton_Start_clicked():Read affine trans tuple failed!",true);
+        return;
+    }
+    //读取反仿射矩阵
+    QString mat_file_revert = m_path_exe + "/cal/TransRevertHomMat2D.tup";
+    QFile qfile_revert(mat_file_revert);
+    if(false == qfile_revert.exists())
+    {
+        DialogShapeModel::print_qmess(QString("cann't find affine trans revert tuple file!"));
+        if(!DebugEnable) return;
+    }
+    char *ch_revert;
+    QByteArray ba_revert = mat_file_revert.toLatin1();
+    ch_revert = ba_revert.data();
+    try
+    {
+        read_tuple(ch_revert, &RevertHomMat2D);
+    }
+    catch(...)
+    {
+        m_log.write_log("MainWindow::on_pushButton_Start_clicked():Read revert affine trans tuple failed!",true);
         return;
     }
     //读取标准点位(拍照位)
@@ -433,16 +473,16 @@ void MainWindow::on_pushButton_Start_clicked()
 //按钮：测试
 void MainWindow::on_pushButton_TestItem_clicked()
 {
-    QString fileName="C:\\Users\\TTY\\Desktop\\1.bmp";
-    QByteArray ba = fileName.toLocal8Bit();
-    char* ch = ba.data();
-    //读取并显示
-    read_image(&m_image, ch);
-
-//    hal_read_mark_shape_model();
-//    mark_process(4,1,1);
-    hal_read_shape_model();
-    screw_process(1,10,1,2);
+    if(DebugEnable)
+    {
+        QString fileName="E:\\images\\1_10_1.bmp";
+        QByteArray ba = fileName.toLocal8Bit();
+        char* ch = ba.data();
+        //读取并显示
+        read_image(&m_image, ch);
+    //    mark_process(4,1,1);
+        screw_process(1,10,1,2);
+    }
 }
 
 //按钮：连接或断开PLC
@@ -535,27 +575,37 @@ void MainWindow::slot_connect_button_status(bool connected)
 //接收数据,由modbus类中的回调函数收到数据后发送到此处
 void MainWindow::slot_read_data(float screwdriver, float screw, float enable, float receive, float mark, float xcoor, float ycoor)
 {
-    if(!Runtime)
-        return;//程序未运行，接收数据不处理
-    if(0.0==enable)
-        return;//拍照禁止
-
-    m_log.write_log("Start Run",m_SaveData);
-    m_log.write_log("Screwdriver-"+QString::number(screwdriver)+" Screw-"+QString::number(screw)+" Mark-"+QString::number(mark)
-                    +" XCoor-"+QString::number(xcoor)+" YCoor-"+QString::number(ycoor),m_SaveData);
-
-    if(mark!=0.0)
+    try
     {
-        int markInt=mark;
-        mark_process(markInt,xcoor,ycoor);
+        if(!Runtime)
+            return;//程序未运行，接收数据不处理
+        if(0.0==enable)
+            return;//拍照禁止
+
+        m_log.write_log("Start Run",m_SaveData);
+        m_log.write_log("Screwdriver-"+QString::number(screwdriver)+" Screw-"+QString::number(screw)+" Mark-"+QString::number(mark)
+                        +" XCoor-"+QString::number(xcoor)+" YCoor-"+QString::number(ycoor),m_SaveData);
+
+        copy_obj(m_region,&m_dynamic_region,1,1);
+
+        if(mark!=0.0)
+        {
+            int markInt=mark;
+            mark_process(markInt,xcoor,ycoor);
+        }
+        else
+        {
+            int screwDriverInt=screwdriver;
+            int screwInt=screw;
+            screw_process(screwDriverInt,screwInt,xcoor,ycoor);
+        }
+        m_log.write_log("Stop Run",m_SaveData);
     }
-    else
+    catch(HException &except)
     {
-        int screwDriverInt=screwdriver;
-        int screwInt=screw;
-        screw_process(screwDriverInt,screwInt,xcoor,ycoor);
+        QString message = QString(except.message);
+        DialogShapeModel::print_qmess(message);
     }
-    m_log.write_log("Stop Run",m_SaveData);
 }
 
 //Mark点流程
@@ -640,7 +690,7 @@ void MainWindow::mark_process(int mark ,float xcoor ,float ycoor)
         try
         {
             vector_to_hom_mat2d(mark_x_1,mark_y_1,mark_x_2,mark_y_2,&HomMat2DRunTime);
-            vector_to_hom_mat2d(mark_x_2,mark_y_2,mark_x_1,mark_y_1,&HomMat2DRevertRunTime);
+            vector_to_hom_mat2d(mark_x_2,mark_y_2,mark_x_1,mark_y_1,&RevertHomMat2DRunTime);
 
             if(m_SaveResult)
             {
@@ -691,7 +741,7 @@ void MainWindow::screw_process(int screwdriver, int screw, float xcoor, float yc
     if(length<=0)
     {
         ui->textBrowser->append("仿射变换矩阵(Runtime)不存在！");
-//        return;
+        if(!DebugEnable) return;
     }
 
     x_coor=0;
@@ -736,68 +786,68 @@ void MainWindow::screw_process(int screwdriver, int screw, float xcoor, float yc
     y_offsetMin=m_cal_data.Offset.y<-(m_cal_data.Offset.y)? m_cal_data.Offset.y:-(m_cal_data.Offset.y);
     y_offsetMax=m_cal_data.Offset.y>-(m_cal_data.Offset.y)? m_cal_data.Offset.y:-(m_cal_data.Offset.y);
 
-    //使用动态仿射矩阵计算准确位置，并进行对比
     double exact_offset_x,exact_offset_y;
-//    try
-//    {
-//        double x1,y1,x2,y2;
-//        x1=xcoor;
-//        y1=ycoor;
-//        affine_trans_point_2d(HomMat2DRunTime,x1,y1,&x2,&y2);
+    double regionX,regionY;
+    if(!DebugEnable)
+    {
+        //使用动态仿射矩阵计算准确位置，并进行对比
+        double x1,y1,x2,y2;
+        try
+        {
+            x1=xcoor;
+            y1=ycoor;
+            affine_trans_point_2d(HomMat2DRunTime,x1,y1,&x2,&y2);
 
-//        exact_offset_x=x2-x1;
-//        exact_offset_y=y2-y1;
-//    }
-//    catch(...)
-//    {
-//        ui->textBrowser->append(QString("Calculate coordinate failed!"));
-//    }
+            exact_offset_x=x2-x1;
+            exact_offset_y=y2-y1;
+        }
+        catch(...)
+        {
+            ui->textBrowser->append(QString("Calculate coordinate failed!"));
+        }
 
-    //采集图像
-//    if(0!=m_snap_cam.snap(0))
-//    {
-//        ui->textBrowser->append(error_message+"采集图像失败！\n");
-//        m_modbus.setupDeviceData(-1.0,-1.0,1.0,NULL,NULL);
-//        return;
-//    }
-//    gen_image1(&m_image,"byte",m_snap_cam.m_cam_width,m_snap_cam.m_cam_height,(Hlong)m_snap_cam.pImageBuffer[0]);
+        //使用反标定仿射计算当前螺丝图像坐标
+        cal_offset_revert(x1,y1,x2,y2,regionX,regionY);
+        //生成动态检测区域
+        gen_circle(&m_dynamic_region,regionY,regionX,600);
+
+        //采集图像
+        if(0!=m_snap_cam.snap(0))
+        {
+            ui->textBrowser->append(error_message+"采集图像失败！\n");
+            m_modbus.setupDeviceData(-1.0,-1.0,1.0,NULL,NULL);
+            return;
+        }
+        gen_image1(&m_image,"byte",m_snap_cam.m_cam_width,m_snap_cam.m_cam_height,(Hlong)m_snap_cam.pImageBuffer[0]);
+    }
+
 
     //开始处理
     bool status=false;
     int image_err = 0;
     int calculate_err = 0;
-    int modelIndex=0;
-    int modelIndexMax=2;
-    int useModelIndex=-1;
+    int modelIndexMax=3;
+    int useModelIndex=0;
     int success_index=0;
     double wrong_position_x[18]={0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
     double wrong_position_y[18]={0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
     int wrong_index=0;
 
-    for(modelIndex=0;modelIndex<modelIndexMax;modelIndex++)
+    for(int modelIndex=0;modelIndex<modelIndexMax;modelIndex++)
     {
-        //遍历最多3次模板
-        if(modelIndex==0)
+        if(screw_index<2)
         {
-            useModelIndex=screw_index;
+            useModelIndex = modelIndex+screw_index;
         }
         else
         {
-            //如果当前螺丝是前2颗，则向后找一颗
-            if(modelIndex==screw_index)
-            {
-                modelIndex++;
-                modelIndexMax++;
-                useModelIndex=modelIndex;
-            }
-
-            if((m_ModelID[screwdriver_index]).find(useModelIndex)==(m_ModelID[screwdriver_index]).end())
-            {
-                useModelIndex=-1;
-            }
+            useModelIndex = modelIndex+screw_index-1;
         }
-
-        if(useModelIndex==-1)
+        if((m_ModelID[screwdriver_index]).find(useModelIndex)==(m_ModelID[screwdriver_index]).end())
+        {
+            useModelIndex-=3;
+        }
+        if((m_ModelID[screwdriver_index]).find(useModelIndex)==(m_ModelID[screwdriver_index]).end())
         {
             break;
         }
@@ -810,11 +860,13 @@ void MainWindow::screw_process(int screwdriver, int screw, float xcoor, float yc
             {
                 copy_image(m_image,&tem_image);
                 median_image(tem_image,&tem_image,"circle",6,"mirrored");
+                scale_image(tem_image,&tem_image,3,-100);
             }
             else
             {
                 //预处理--1次不同程度二值化
                 median_image(m_image,&tem_image,"circle",6,"mirrored");
+                scale_image(tem_image,&tem_image,3,-100);
                 threshold(tem_image,&Regions,70+i*10,255);
                 region_to_bin(Regions,&tem_image,255,0,2592,1944);
             }
@@ -862,7 +914,6 @@ void MainWindow::screw_process(int screwdriver, int screw, float xcoor, float yc
                     //计算失败，数据保存
                     for(int n=0;n<3;n++)
                     {
-                        std::cout << "num: " << n << std::endl;
                         m_screw_csv->data_write(60+i*10,modelIndex,screwdriver,screw,xcoor,ycoor,pix_x[n],pix_y[n],
                                                offset_x[n],offset_y[n],exact_offset_x,exact_offset_y,x_diff[n],y_diff[n],
                                                0,0,0,0,"Calculate failed",true);
@@ -892,20 +943,13 @@ void MainWindow::screw_process(int screwdriver, int screw, float xcoor, float yc
         HTuple offsetX=0.0;
         HTuple offsetY=0.0;
 
-        int hv_Index=0;
         for(int i=0;i<18;i++)
         {
             if(wrong_position_x[i]!=0.0)
             {
-                px[hv_Index]=wrong_position_x[i];
-                py[hv_Index]=wrong_position_y[i];
-                hv_Index++;
+                px=px.Append(wrong_position_x[i]);
+                py=py.Append(wrong_position_y[i]);
             }
-        }
-        if(px.Num()==0)
-        {
-            px=0.0;
-            py=0.0;
         }
 
         image_show(m_image,py,px,offsetY,offsetX,true);
@@ -936,7 +980,7 @@ void MainWindow::screw_process(int screwdriver, int screw, float xcoor, float yc
         double x_work_diff,y_work_diff;
         double x_work=xcoor+offset_x[success_index];
         double y_work=ycoor+offset_y[success_index];
-        affine_trans_point_2d(HomMat2DRevertRunTime,x_work,y_work,&xcoor_revert,&ycoor_revert);
+        affine_trans_point_2d(RevertHomMat2DRunTime,x_work,y_work,&xcoor_revert,&ycoor_revert);
         x_work_diff=xcoor_revert-xcoor;
         y_work_diff=ycoor_revert-ycoor;
         //保存坐标
@@ -971,8 +1015,9 @@ int MainWindow::image_process_screw(Hobject& Image,Hlong model_id,double score,d
     HTuple findRow,findCol,findAngle,findScale,findScore;
 
     double dradRange = HTuple(360).Rad()[0].D();
-    reduce_domain(Image,m_region,&Image);
-    find_scaled_shape_model(Image,  model_id, 0, dradRange , 0.8, 1.2, score, 3, 0.5,
+    reduce_domain(Image,m_dynamic_region,&Image);
+
+    find_scaled_shape_model(Image,  model_id, 0, dradRange , 0.9, 1.1, score, 3, 0.5,
                      "least_squares", 5, 0.3, &findRow, &findCol, &findAngle, &findScale, &findScore);
 
     //判断findRow有无
@@ -1038,12 +1083,74 @@ int MainWindow::cal_offset_screw(double x[],double y[],double world_offset_x[], 
         cerr<<e.what();
         return -2;
     }
+    catch(HException &except)
+    {
+        QString message = QString(except.message);
+        DialogShapeModel::print_qmess(message);
+        return -2;
+    }
 
     return 0;
 }
 
+int MainWindow::cal_offset_revert(double xcoor ,double ycoor ,double screw_x,double screw_y,double& pix_x, double& pix_y)
+{
+//    double platform_x_old,platform_y_old;
+//    double platform_x_new, platform_y_new;
+
+//    try
+//    {
+//        double x,y;
+//        affine_trans_point_2d(HomMat2D,m_cal_data.StdP.x,m_cal_data.StdP.y,&platform_x_old,&platform_y_old);
+//        affine_trans_point_2d(RevertHomMat2D,platform_x_old,platform_y_old,&x,&y);
+//        platform_x_new = (screw_x - xcoor) - (m_cal_data.LuoW.x - m_cal_data.StdW.x) + platform_x_old;
+//        platform_y_new = (screw_y - ycoor) - (m_cal_data.LuoW.y - m_cal_data.StdW.y) + platform_y_old;
+//        affine_trans_point_2d(RevertHomMat2D,platform_x_new,platform_y_new,&pix_x,&pix_y);
+//    }
+//    catch(exception &e)
+//    {
+//        cerr<<e.what();
+//        return -2;
+//    }
+//    catch(HException &except)
+//    {
+//        QString message = QString(except.message);
+//        DialogShapeModel::print_qmess(message);
+//        return -2;
+//    }
+
+
+    double pix_x1,pix_y1;
+    double pix_x2,pix_y2;
+    double screw_x2,screw_y2;
+    // read Mat and do affine trans
+    try
+    {
+        affine_trans_point_2d(RevertHomMat2D,screw_x,screw_y,&pix_x1,&pix_y1);
+        screw_x2 = xcoor + (m_cal_data.LuoW.x - m_cal_data.StdW.x);
+        screw_y2 = ycoor + (m_cal_data.LuoW.y - m_cal_data.StdW.y);
+        affine_trans_point_2d(RevertHomMat2D,screw_x2,screw_y2,&pix_x2,&pix_y2);
+        pix_x=m_cal_data.StdP.x+(pix_x1-pix_x2);
+        pix_y=m_cal_data.StdP.y+(pix_y1-pix_y2);
+    }
+    catch(exception &e)
+    {
+        cerr<<e.what();
+        return -2;
+    }
+    catch(HException &except)
+    {
+        QString message = QString(except.message);
+        DialogShapeModel::print_qmess(message);
+        return -2;
+    }
+
+    return 0;
+}
+
+
 //图片保存（原图及处理后图片，处理后图片为屏幕截图）
-int MainWindow::image_save(Hobject& Image,QString name, bool bIsSaveRaw,bool bIsSaveResult)
+int MainWindow::image_save(Hobject& Image, QString name, bool bIsSaveRaw, bool bIsSaveResult)
 {
     name=name.replace(":","");
     //获取当前保存的日期&&时间精确到ms
@@ -1052,16 +1159,16 @@ int MainWindow::image_save(Hobject& Image,QString name, bool bIsSaveRaw,bool bIs
 
     //创建文件夹 --- 存放的文件夹：当前exe路径的./ImageResult  ./ImageRaw
     //子文件夹按日期命名：2018-10-20
-    QDir image_dir_raw(m_path_exe + "/ImageRaw/" + current_date);
-    QDir image_dir_res(m_path_exe + "/ImageResult/" + current_date);
+    QDir image_dir_raw(m_path_exe + "/ImageRaw/" + current_date + "/" + name);
+    QDir image_dir_res(m_path_exe + "/ImageResult/" + current_date + "/" + name);
 
     //先检测文件夹是否完备：创建
     if (false == image_dir_raw.exists())
     {
-        bool is_created = image_dir_raw.mkpath(m_path_exe + "/ImageRaw/" + current_date);
+        bool is_created = image_dir_raw.mkpath(m_path_exe + "/ImageRaw/" + current_date+ "/" + name);
         if (false == is_created)
         {
-            m_log.write_log("MainWindow::image_save(): the folder ImageRaw created failed!",true);
+            m_log.write_log("MainWindow::image_save(): the folder ImageRaw created failed! " + name,true);
             return -1;
         }
     }
@@ -1071,13 +1178,13 @@ int MainWindow::image_save(Hobject& Image,QString name, bool bIsSaveRaw,bool bIs
         bool is_created = image_dir_res.mkpath(m_path_exe + "/ImageResult/" + current_date);
         if (false == is_created)
         {
-            m_log.write_log("MainWindow::image_save(): the folder ImageResult created failed!",true);
+            m_log.write_log("MainWindow::image_save(): the folder ImageResult created failed! " + name,true);
             return -2;
         }
     }
 
     //write image
-    QString image_path = image_dir_raw.filePath("./") + current_date_time.toString("hh_mm_ss_zzz") + "--" +name;
+    QString image_path = image_dir_raw.filePath("./") + current_date_time.toString("hh_mm_ss_zzz");
     QByteArray ba = image_path.toLatin1(); // must
     char* ch = ba.data();
     if( true == bIsSaveRaw )
@@ -1090,12 +1197,12 @@ int MainWindow::image_save(Hobject& Image,QString name, bool bIsSaveRaw,bool bIs
         catch (HException &except)
         {
             cerr<<except.err;
-            m_log.write_log("MainWindow::image_save(): write image1 failed!",true);
+            m_log.write_log("MainWindow::image_save(): write image1 failed! " + name,true);
             return -3;
         }
     }
 
-    image_path = image_dir_res.filePath("./") + current_date_time.toString("hh_mm_ss_zzz") + "--" + name ;
+    image_path = image_dir_res.filePath("./") + current_date_time.toString("hh_mm_ss_zzz");
     ba = image_path.toLocal8Bit();
     ch = ba.data();
 

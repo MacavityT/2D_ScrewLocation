@@ -88,16 +88,18 @@ public:
     //Hal param
     Hobject m_image;
     Hobject m_region;
+    Hobject m_dynamic_region;
     Hlong m_win_id;
     Hlong image_width,image_height;
     HTuple worldX, worldY;
     HTuple HomMat2D;
+    HTuple RevertHomMat2D;
     //模板ID：不存在的模板设置为-1
     map<int, map<int, Hlong>> m_ModelID;
     map<int,Hlong> m_mark_ModelID;
     //运行计算
     HTuple HomMat2DRunTime;
-    HTuple HomMat2DRevertRunTime;
+    HTuple RevertHomMat2DRunTime;
     HTuple mark_x_1,mark_y_1;
     HTuple mark_x_2,mark_y_2;
     //Hal 视觉部分初始化；视觉参数初始化
@@ -112,11 +114,13 @@ public:
     int image_process_screw(Hobject& Image,Hlong model_id,double score,double pix_x[],double pix_y[]);
     int cal_offset_mark(double x,double y,double &world_offset_x, double &world_offset_y);
     int cal_offset_screw(double x[],double y[],double world_offset_x[], double world_offset_y[]);
+    int cal_offset_revert(double xcoor ,double ycoor ,double screw_x,double screw_y,double& pix_x, double& pix_y);
     float x_coor,y_coor;//偏移量结果，如果未识别到则结果不变
     //处理后显示
     int image_show(Hobject& Image,HTuple& findRow,HTuple& findCol,HTuple& offsetRow,HTuple& offsetCol,bool bState);
 
 private:
+    bool DebugEnable=false;
     Ui::MainWindow *ui;
 
 signals:

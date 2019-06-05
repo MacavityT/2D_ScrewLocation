@@ -214,6 +214,7 @@ void Dialog::on_YCoordinate_textChanged()
 void Dialog::on_pushButtonCalibra_clicked()
 {
     HTuple HomMat2D;
+    HTuple RevertHomMat2D;
     HTuple Px,Py,Qx,Qy;
     QMessageBox msgBox;
     msgBox.setWindowTitle("Warnning");
@@ -260,6 +261,7 @@ void Dialog::on_pushButtonCalibra_clicked()
     try
     {
         vector_to_hom_mat2d(Px,Py,Qx,Qy,&HomMat2D);
+        vector_to_hom_mat2d(Qx,Qy,Px,Py,&RevertHomMat2D);
     }
     catch(...)
     {
@@ -279,11 +281,16 @@ void Dialog::on_pushButtonCalibra_clicked()
             return;
         }
     }
-    //写入hom_mat
+    //写入仿射矩阵
     QString qdstr = m_path_exe + "/cal/TransHomMat2D.tup";
     QByteArray ba = qdstr.toLatin1();
     char* ch=ba.data();
     write_tuple (HomMat2D, ch);
+    //写入反仿射矩阵
+    QString qdstr_revert = m_path_exe + "/cal/TransRevertHomMat2D.tup";
+    QByteArray ba_revert = qdstr_revert.toLatin1();
+    char* ch_revert=ba_revert.data();
+    write_tuple (RevertHomMat2D, ch_revert);
     //写入所有点坐标
     write_cal_point_data();
     //Show HomMat2D
