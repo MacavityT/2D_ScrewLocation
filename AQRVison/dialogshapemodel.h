@@ -69,8 +69,6 @@ private slots:
 
     void on_pushButton_Test_clicked();
 
-    void on_pushButtonDetectRegion_clicked();
-
     void on_pushButtonShowRegion_clicked();
 
     void on_combo_Score_activated(const QString &arg1);
@@ -87,6 +85,12 @@ private slots:
 
     void on_pushButtonCreateShapeModelMark_clicked();
 
+    void on_pushButtonMarkRegion_clicked();
+
+    void on_pushButtonScrewRegion_clicked();
+
+    void on_pushButtonShowScrewRegion_clicked();
+
 private:
     Ui::DialogShapeModel *ui;
 
@@ -94,6 +98,7 @@ private:
     HTuple m_ModelID;
     Hlong m_win_id,image_width,image_height;
     double m_create_row,m_create_col,m_create_radius;
+    double m_screw_row,m_screw_col,m_screw_radius;
 
     //创建模板所使用字段
     Hobject cpy_image, m_modelRegion, m_templateImage, m_ModelContours, m_TransContours;
@@ -101,6 +106,7 @@ private:
     HTuple  hv_RefColumn, hv_HomMat2D, hv_RefRow, hv_ModelRegionArea;
     //准心区域
     Hobject m_detect_region;
+    Hobject m_screw_region;
     //螺丝编号对应模板编号
     int screw_num=0;
     int screw_type=0;

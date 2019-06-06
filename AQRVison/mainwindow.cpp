@@ -408,6 +408,19 @@ void MainWindow::on_pushButton_Start_clicked()
     QByteArray ba1 = qdstr.toLocal8Bit();
     char* ch1 = ba1.data();
     read_region(&m_region,ch1);
+    //加载螺丝动态检测区域
+    HTuple Row,Column;
+    QString qdstr_screw = m_path_exe + QString("/region/ScrewRegion.hobj");
+    QFile qfile1_screw(qdstr_screw);
+    if(false == qfile1_screw.exists())
+    {
+        DialogShapeModel::print_qmess(QString("cann't find screw region file!"));
+        return;
+    }
+    QByteArray ba1_screw = qdstr_screw.toLocal8Bit();
+    char* ch1_screw = ba1_screw.data();
+    read_region(&m_dynamic_region,ch1_screw);
+    smallest_circle(m_dynamic_region,&Row,&Column,&m_dynamic_region_radius);
     //读取仿射变换矩阵（判断是否存在）
     QString mat_file = m_path_exe + "/cal/TransHomMat2D.tup";
     QFile qfile(mat_file);
@@ -475,13 +488,15 @@ void MainWindow::on_pushButton_TestItem_clicked()
 {
     if(DebugEnable)
     {
-        QString fileName="E:\\images\\1_10_1.bmp";
+        DebugRegionRow=906.039;
+        DebugRegionColumn=1432.56;
+        QString fileName="C:\\Users\\TTY\\Desktop\\1.bmp";
         QByteArray ba = fileName.toLocal8Bit();
         char* ch = ba.data();
         //读取并显示
         read_image(&m_image, ch);
     //    mark_process(4,1,1);
-        screw_process(1,10,1,2);
+        screw_process(1,7,1,2);
     }
 }
 
@@ -644,10 +659,44 @@ void MainWindow::mark_process(int mark ,float xcoor ,float ycoor)
         score=0.5;
 
     int err = 0;
+    vector<int> model_name={1,2,3,4};
+    auto use_iterator=model_name.begin();
+    int use_index;
     Hobject tem_image;
-    copy_image(m_image,&tem_image);
-    err = image_process_mark(tem_image, m_mark_ModelID[mark],score,pix_x,pix_y);
-    if(0 != err)
+    bool status=false;
+    for(int modelIndex=0;modelIndex<4;modelIndex++)
+    {
+        if(model_name.empty()) break;
+
+        if(modelIndex==0)
+        {
+            use_iterator+=mark-1;
+        }
+        else
+        {
+            use_iterator=model_name.begin();
+        }
+        use_index=*use_iterator;
+        model_name.erase(use_iterator);
+
+
+        if(m_mark_ModelID.find(use_index)==m_mark_ModelID.end())
+        {
+            break;
+        }
+
+        median_image(m_image,&tem_image,"circle",6,"mirrored");
+        scale_image(tem_image,&tem_image,3,-100);
+        err = image_process_mark(tem_image, m_mark_ModelID[use_index],score,pix_x,pix_y);
+        if(0==err)
+        {
+            status=true;
+        }
+
+        if(status) break;
+    }
+
+    if(!status)
     {
         HTuple px = 0.0;
         HTuple py = 0.0;
@@ -786,12 +835,12 @@ void MainWindow::screw_process(int screwdriver, int screw, float xcoor, float yc
     y_offsetMin=m_cal_data.Offset.y<-(m_cal_data.Offset.y)? m_cal_data.Offset.y:-(m_cal_data.Offset.y);
     y_offsetMax=m_cal_data.Offset.y>-(m_cal_data.Offset.y)? m_cal_data.Offset.y:-(m_cal_data.Offset.y);
 
+    double x1,y1,x2,y2;
     double exact_offset_x,exact_offset_y;
     double regionX,regionY;
     if(!DebugEnable)
     {
         //使用动态仿射矩阵计算准确位置，并进行对比
-        double x1,y1,x2,y2;
         try
         {
             x1=xcoor;
@@ -806,11 +855,6 @@ void MainWindow::screw_process(int screwdriver, int screw, float xcoor, float yc
             ui->textBrowser->append(QString("Calculate coordinate failed!"));
         }
 
-        //使用反标定仿射计算当前螺丝图像坐标
-        cal_offset_revert(x1,y1,x2,y2,regionX,regionY);
-        //生成动态检测区域
-        gen_circle(&m_dynamic_region,regionY,regionX,600);
-
         //采集图像
         if(0!=m_snap_cam.snap(0))
         {
@@ -821,6 +865,17 @@ void MainWindow::screw_process(int screwdriver, int screw, float xcoor, float yc
         gen_image1(&m_image,"byte",m_snap_cam.m_cam_width,m_snap_cam.m_cam_height,(Hlong)m_snap_cam.pImageBuffer[0]);
     }
 
+    //生成动态检测区域
+    if(!DebugEnable)
+    {
+        //使用反标定仿射计算当前螺丝图像坐标
+        cal_offset_revert(x1,y1,x2,y2,regionX,regionY);
+        gen_circle(&m_dynamic_region,regionY,regionX,m_dynamic_region_radius);
+    }
+    else
+    {
+        gen_circle(&m_dynamic_region,DebugRegionRow,DebugRegionColumn,m_dynamic_region_radius);
+    }
 
     //开始处理
     bool status=false;
@@ -996,7 +1051,6 @@ int MainWindow::image_process_mark(Hobject& Image,Hlong model_id,double score,do
     HTuple findRow,findCol,findAngle,findScale,findScore;
     double dradRange = HTuple(360).Rad()[0].D();
     reduce_domain(Image,m_region,&Image);
-    median_image(Image,&Image,"circle",6,"mirrored");
     find_scaled_shape_model(Image,  model_id, 0, dradRange , 0.8, 1.2, score, 1, 0.5,
                      "least_squares", 5, 0.3, &findRow, &findCol, &findAngle, &findScale, &findScore);
 
@@ -1016,7 +1070,6 @@ int MainWindow::image_process_screw(Hobject& Image,Hlong model_id,double score,d
 
     double dradRange = HTuple(360).Rad()[0].D();
     reduce_domain(Image,m_dynamic_region,&Image);
-
     find_scaled_shape_model(Image,  model_id, 0, dradRange , 0.9, 1.1, score, 3, 0.5,
                      "least_squares", 5, 0.3, &findRow, &findCol, &findAngle, &findScale, &findScore);
 
@@ -1175,7 +1228,7 @@ int MainWindow::image_save(Hobject& Image, QString name, bool bIsSaveRaw, bool b
 
     if (false == image_dir_res.exists())
     {
-        bool is_created = image_dir_res.mkpath(m_path_exe + "/ImageResult/" + current_date);
+        bool is_created = image_dir_res.mkpath(m_path_exe + "/ImageResult/" + current_date+ "/"  + name);
         if (false == is_created)
         {
             m_log.write_log("MainWindow::image_save(): the folder ImageResult created failed! " + name,true);
@@ -1197,7 +1250,7 @@ int MainWindow::image_save(Hobject& Image, QString name, bool bIsSaveRaw, bool b
         catch (HException &except)
         {
             cerr<<except.err;
-            m_log.write_log("MainWindow::image_save(): write image1 failed! " + name,true);
+            m_log.write_log("MainWindow::image_save(): write image1 failed! " + name + "  " +except.message,true);
             return -3;
         }
     }
@@ -1219,7 +1272,7 @@ int MainWindow::image_save(Hobject& Image, QString name, bool bIsSaveRaw, bool b
        catch (HException &except)
        {
            cerr<<except.err;
-           m_log.write_log("MainWindow::image_save(): write image2 failed!",true);
+           m_log.write_log("MainWindow::image_save(): write image2 failed!" + name + "  " +except.message,true);
            return -4;
        }
     }

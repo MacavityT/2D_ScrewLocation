@@ -297,8 +297,8 @@ int DialogShapeModel::ClickButtonPicOne()
     return 0;
 }
 
-//按钮：创建检测区域
-void DialogShapeModel::on_pushButtonDetectRegion_clicked()
+//按钮：创建mark区域
+void DialogShapeModel::on_pushButtonMarkRegion_clicked()
 {
     //提示画一个圆圈
     set_color(m_win_id,"green");
@@ -337,6 +337,46 @@ void DialogShapeModel::on_pushButtonDetectRegion_clicked()
     print_qmess(QString("创建成功"));
 }
 
+//按钮：创建检测区域
+void DialogShapeModel::on_pushButtonScrewRegion_clicked()
+{
+    //提示画一个圆圈
+    set_color(m_win_id,"green");
+    set_draw(m_win_id,"margin");
+    set_line_width(m_win_id,1);
+    draw_circle(m_win_id,&m_screw_row,&m_screw_col,&m_screw_radius);
+    disp_circle(m_win_id,m_screw_row,m_screw_col,m_screw_radius);
+    gen_circle(&m_screw_region, m_screw_row,m_screw_col,m_screw_radius);
+    //判断文件夹是否存在，不存在则创建
+    QDir dir(m_path_exe + "/region/");
+    dir.setFilter(QDir::Files | QDir::NoSymLinks);
+    if (false == dir.exists())
+    {
+        bool is_mkdir = dir.mkdir(m_path_exe + "/region/");
+        if (false == is_mkdir)
+        {
+            print_qmess(QString("创建文件夹失败"));
+            clear_window(m_win_id);
+            return;
+        }
+    }
+    //保存区域
+    QString qdstr = m_path_exe + QString("/region/ScrewRegion.hobj");
+    QByteArray ba = qdstr.toLocal8Bit();
+    char* ch = ba.data();
+    try
+    {
+        write_region(m_screw_region,ch);
+    }
+    catch(...)
+    {
+        print_qmess(QString("保存失败"));
+        clear_window(m_win_id);
+        return;
+    }
+    print_qmess(QString("创建成功"));
+}
+
 //选择是否在连续采集中显示圆形区域
 void DialogShapeModel::on_pushButtonShowRegion_clicked()
 {
@@ -355,6 +395,16 @@ void DialogShapeModel::on_pushButtonShowRegion_clicked()
         ui->pushButtonShowRegion->setText(QString("显示区域"));
     }
 }
+
+void DialogShapeModel::on_pushButtonShowScrewRegion_clicked()
+{
+    QString qdstr = m_path_exe + QString("/region/ScrewRegion.hobj");
+    QByteArray ba = qdstr.toLocal8Bit();
+    char* ch = ba.data();
+    read_region(&m_detect_region,ch);
+    disp_obj(m_screw_region,m_win_id);
+}
+
 
 //显示准心
 void DialogShapeModel::on_pushButtonShowCross_clicked()
@@ -881,8 +931,7 @@ void DialogShapeModel::on_pushButton_Test_clicked()
     {
         reduce_domain(m_image,m_modelRegion,&image);
         median_image(image,&image,"circle",6,"mirrored");
-//        find_shape_model(m_image,  test_modelID, 0, dradRange , score, 1, 0.5,
-//                         "least_squares", 3, 0.9, &findRow, &findCol, &findAngle, &findScore);
+        scale_image(image,&image,3,-100);
         find_scaled_shape_model(image,  test_modelID, 0, dradRange , 0.8, 1.2, score, 3, 0.5,
                          "least_squares", 5, 0.3, &findRow, &findCol, &findAngle, &findScale, &findScore);
     }

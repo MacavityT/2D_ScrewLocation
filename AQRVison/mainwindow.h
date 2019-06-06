@@ -94,6 +94,7 @@ public:
     HTuple worldX, worldY;
     HTuple HomMat2D;
     HTuple RevertHomMat2D;
+    HTuple m_dynamic_region_radius;
     //模板ID：不存在的模板设置为-1
     map<int, map<int, Hlong>> m_ModelID;
     map<int,Hlong> m_mark_ModelID;
@@ -121,6 +122,8 @@ public:
 
 private:
     bool DebugEnable=false;
+    double DebugRegionRow;
+    double DebugRegionColumn;
     Ui::MainWindow *ui;
 
 signals:
