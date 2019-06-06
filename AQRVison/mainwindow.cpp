@@ -909,6 +909,7 @@ void MainWindow::screw_process(int screwdriver, int screw, float xcoor, float yc
 
         //正式处理
         Hobject tem_image,Regions;
+        Hobject Regions1,ConnectedRegions,SelectedRegions,RegionOpening,RegionClosing,SelectedRegions1,RegionUnion,RegionIntersection;
         for(int i=-1;i<1;i++)
         {
             if(i==-1)
@@ -916,12 +917,36 @@ void MainWindow::screw_process(int screwdriver, int screw, float xcoor, float yc
                 copy_image(m_image,&tem_image);
                 median_image(tem_image,&tem_image,"circle",6,"mirrored");
                 scale_image(tem_image,&tem_image,3,-100);
+                //分离线材区域，暂时这么写，等待重构
+                auto_threshold(tem_image,&Regions1,2);
+                connection(Regions1,&ConnectedRegions);
+                select_shape(ConnectedRegions, &SelectedRegions, "area", "and", 2000, 999999999999);
+                opening_circle (SelectedRegions, &RegionOpening, 30);
+                closing_circle(RegionOpening, &RegionClosing, 30);
+                select_shape(RegionClosing, &SelectedRegions1, HTuple("circularity").Append("area"),"and",HTuple(0).Append(9999),\
+                             HTuple(0.3).Append(999999999));
+                union1(SelectedRegions1, &RegionUnion);
+                intersection(m_dynamic_region,RegionUnion,&RegionIntersection);
+                difference(m_dynamic_region,RegionIntersection,&m_dynamic_region);
             }
             else
             {
                 //预处理--1次不同程度二值化
                 median_image(m_image,&tem_image,"circle",6,"mirrored");
                 scale_image(tem_image,&tem_image,3,-100);
+                //分离线材区域，暂时这么写，等待重构
+                auto_threshold(tem_image,&Regions1,2);
+                connection(Regions1,&ConnectedRegions);
+                select_shape(ConnectedRegions, &SelectedRegions, "area", "and", 2000, 999999999999);
+                opening_circle (SelectedRegions, &RegionOpening, 30);
+                closing_circle(RegionOpening, &RegionClosing, 30);
+                select_shape(RegionClosing, &SelectedRegions1, HTuple("circularity").Append("area"),"and",HTuple(0).Append(9999),\
+                             HTuple(0.3).Append(999999999));
+                union1(SelectedRegions1, &RegionUnion);
+                intersection(m_dynamic_region,RegionUnion,&RegionIntersection);
+                difference(m_dynamic_region,RegionIntersection,&m_dynamic_region);
+
+
                 threshold(tem_image,&Regions,70+i*10,255);
                 region_to_bin(Regions,&tem_image,255,0,2592,1944);
             }
