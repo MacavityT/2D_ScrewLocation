@@ -121,7 +121,7 @@ public:
     int image_show(Hobject& Image,HTuple& findRow,HTuple& findCol,HTuple& offsetRow,HTuple& offsetCol,bool bState);
 
 private:
-    bool DebugEnable=false;
+    bool DebugEnable=true;
     double DebugRegionRow;
     double DebugRegionColumn;
     Ui::MainWindow *ui;

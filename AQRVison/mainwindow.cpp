@@ -496,7 +496,7 @@ void MainWindow::on_pushButton_TestItem_clicked()
         //读取并显示
         read_image(&m_image, ch);
     //    mark_process(4,1,1);
-        screw_process(1,7,1,2);
+        screw_process(1,5,1,2);
     }
 }
 
@@ -626,6 +626,9 @@ void MainWindow::slot_read_data(float screwdriver, float screw, float enable, fl
 //Mark点流程
 void MainWindow::mark_process(int mark ,float xcoor ,float ycoor)
 {
+    //清空动态矩阵
+    HomMat2DRunTime=HTuple();
+    RevertHomMat2DRunTime=HTuple();
     //准备错误信息
     QString error_message;
     int mark_index=mark;
@@ -686,11 +689,14 @@ void MainWindow::mark_process(int mark ,float xcoor ,float ycoor)
         }
 
         median_image(m_image,&tem_image,"circle",6,"mirrored");
-        scale_image(tem_image,&tem_image,3,-100);
         err = image_process_mark(tem_image, m_mark_ModelID[use_index],score,pix_x,pix_y);
         if(0==err)
         {
             status=true;
+        }
+        else
+        {
+            m_mark_csv->data_write(mark,xcoor,ycoor,0,0,0,0,"Can't find mark",true);
         }
 
         if(status) break;
@@ -708,7 +714,7 @@ void MainWindow::mark_process(int mark ,float xcoor ,float ycoor)
         //图像-原图保存-处理后截图保存
         image_save(m_image,error_message,true,true);
         //写入时间及坐标
-        m_mark_csv->data_write(mark,xcoor,ycoor,0,0,0,0,"Can't find mark",true);
+        m_mark_csv->data_write(mark,xcoor,ycoor,0,0,0,0,"Find mark failed",true);
         return;
     }
 
@@ -918,16 +924,16 @@ void MainWindow::screw_process(int screwdriver, int screw, float xcoor, float yc
                 median_image(tem_image,&tem_image,"circle",6,"mirrored");
                 scale_image(tem_image,&tem_image,3,-100);
                 //分离线材区域，暂时这么写，等待重构
-                auto_threshold(tem_image,&Regions1,2);
-                connection(Regions1,&ConnectedRegions);
-                select_shape(ConnectedRegions, &SelectedRegions, "area", "and", 2000, 999999999999);
-                opening_circle (SelectedRegions, &RegionOpening, 30);
-                closing_circle(RegionOpening, &RegionClosing, 30);
-                select_shape(RegionClosing, &SelectedRegions1, HTuple("circularity").Append("area"),"and",HTuple(0).Append(9999),\
-                             HTuple(0.3).Append(999999999));
-                union1(SelectedRegions1, &RegionUnion);
-                intersection(m_dynamic_region,RegionUnion,&RegionIntersection);
-                difference(m_dynamic_region,RegionIntersection,&m_dynamic_region);
+//                auto_threshold(tem_image,&Regions1,2);
+//                connection(Regions1,&ConnectedRegions);
+//                select_shape(ConnectedRegions, &SelectedRegions, "area", "and", 2000, 999999999999);
+//                opening_circle (SelectedRegions, &RegionOpening, 30);
+//                closing_circle(RegionOpening, &RegionClosing, 30);
+//                select_shape(RegionClosing, &SelectedRegions1, HTuple("circularity").Append("area"),"and",HTuple(0).Append(9999),\
+//                             HTuple(0.3).Append(999999999));
+//                union1(SelectedRegions1, &RegionUnion);
+//                intersection(m_dynamic_region,RegionUnion,&RegionIntersection);
+//                difference(m_dynamic_region,RegionIntersection,&m_dynamic_region);
             }
             else
             {
@@ -935,16 +941,16 @@ void MainWindow::screw_process(int screwdriver, int screw, float xcoor, float yc
                 median_image(m_image,&tem_image,"circle",6,"mirrored");
                 scale_image(tem_image,&tem_image,3,-100);
                 //分离线材区域，暂时这么写，等待重构
-                auto_threshold(tem_image,&Regions1,2);
-                connection(Regions1,&ConnectedRegions);
-                select_shape(ConnectedRegions, &SelectedRegions, "area", "and", 2000, 999999999999);
-                opening_circle (SelectedRegions, &RegionOpening, 30);
-                closing_circle(RegionOpening, &RegionClosing, 30);
-                select_shape(RegionClosing, &SelectedRegions1, HTuple("circularity").Append("area"),"and",HTuple(0).Append(9999),\
-                             HTuple(0.3).Append(999999999));
-                union1(SelectedRegions1, &RegionUnion);
-                intersection(m_dynamic_region,RegionUnion,&RegionIntersection);
-                difference(m_dynamic_region,RegionIntersection,&m_dynamic_region);
+//                auto_threshold(tem_image,&Regions1,2);
+//                connection(Regions1,&ConnectedRegions);
+//                select_shape(ConnectedRegions, &SelectedRegions, "area", "and", 2000, 999999999999);
+//                opening_circle (SelectedRegions, &RegionOpening, 30);
+//                closing_circle(RegionOpening, &RegionClosing, 30);
+//                select_shape(RegionClosing, &SelectedRegions1, HTuple("circularity").Append("area"),"and",HTuple(0).Append(9999),\
+//                             HTuple(0.3).Append(999999999));
+//                union1(SelectedRegions1, &RegionUnion);
+//                intersection(m_dynamic_region,RegionUnion,&RegionIntersection);
+//                difference(m_dynamic_region,RegionIntersection,&m_dynamic_region);
 
 
                 threshold(tem_image,&Regions,70+i*10,255);
@@ -1042,7 +1048,7 @@ void MainWindow::screw_process(int screwdriver, int screw, float xcoor, float yc
         {
             m_screw_csv->data_write(-1,-1,screwdriver,screw,xcoor,ycoor,pix_x[n],pix_y[n],
                                    offset_x[n],offset_y[n],exact_offset_x,exact_offset_y,x_diff[n],y_diff[n],
-                                    0,0,0,0,"Can't find screw or wrong position",true);
+                                    0,0,0,0,"Find screw failed or wrong position",true);
         }
     }
     else
@@ -1231,6 +1237,7 @@ int MainWindow::cal_offset_revert(double xcoor ,double ycoor ,double screw_x,dou
 int MainWindow::image_save(Hobject& Image, QString name, bool bIsSaveRaw, bool bIsSaveResult)
 {
     name=name.replace(":","");
+    name=name.replace(" ","");
     //获取当前保存的日期&&时间精确到ms
     QDateTime current_date_time = QDateTime::currentDateTime();
     QString current_date =current_date_time.toString("yyyy-MM-dd");
