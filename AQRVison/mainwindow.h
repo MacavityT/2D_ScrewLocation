@@ -59,6 +59,8 @@ public:
 public:
     //运行标志位
     static bool Runtime;
+    //遮挡识别
+    bool ShelterDetect=false;
     //data模块
     AQData* m_mark_csv;
     AQData* m_screw_csv;
@@ -95,9 +97,12 @@ public:
     HTuple HomMat2D;
     HTuple RevertHomMat2D;
     HTuple m_dynamic_region_radius;
+    HTuple m_svm_handle;
     //模板ID：不存在的模板设置为-1
     map<int, map<int, Hlong>> m_ModelID;
     map<int,Hlong> m_mark_ModelID;
+    //内圆区域
+    map<int,Hobject> m_inner_circle_region;
     //运行计算
     HTuple HomMat2DRunTime;
     HTuple RevertHomMat2DRunTime;
@@ -116,12 +121,13 @@ public:
     int cal_offset_mark(double x,double y,double &world_offset_x, double &world_offset_y);
     int cal_offset_screw(double x[],double y[],double world_offset_x[], double world_offset_y[]);
     int cal_offset_revert(double xcoor ,double ycoor ,double screw_x,double screw_y,double& pix_x, double& pix_y);
+    void calculate_features (Hobject ho_Region, HTuple *hv_Features);
     float x_coor,y_coor;//偏移量结果，如果未识别到则结果不变
     //处理后显示
     int image_show(Hobject& Image,HTuple& findRow,HTuple& findCol,HTuple& offsetRow,HTuple& offsetCol,bool bState);
 
 private:
-    bool DebugEnable=true;
+    bool DebugEnable=false;
     double DebugRegionRow;
     double DebugRegionColumn;
     Ui::MainWindow *ui;
@@ -155,6 +161,7 @@ private slots:
     void on_pushButton_SaveResult_clicked();
     void on_pushButton_SaveCoordinate_clicked();
     void on_pushButton_ChangeLink_clicked();
+    void on_checkBox_toggled(bool checked);
 };
 
 /*

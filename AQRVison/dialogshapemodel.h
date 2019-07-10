@@ -36,6 +36,7 @@ public:
     void deleteFile();
 
     int draw_show();
+    int create_region(Hobject& region,QString name);
     int save_templa_image(bool isMark);
     //相机初始化
     int cam_init(basler_cam* ptr_cam);
@@ -91,6 +92,8 @@ private slots:
 
     void on_pushButtonShowScrewRegion_clicked();
 
+    void on_pushButtonInnerCircleRegion_clicked();
+
 private:
     Ui::DialogShapeModel *ui;
 
@@ -107,6 +110,7 @@ private:
     //准心区域
     Hobject m_detect_region;
     Hobject m_screw_region;
+    Hobject m_inner_circle_region;
     //螺丝编号对应模板编号
     int screw_num=0;
     int screw_type=0;

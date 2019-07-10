@@ -300,81 +300,24 @@ int DialogShapeModel::ClickButtonPicOne()
 //按钮：创建mark区域
 void DialogShapeModel::on_pushButtonMarkRegion_clicked()
 {
-    //提示画一个圆圈
-    set_color(m_win_id,"green");
-    set_draw(m_win_id,"margin");
-    set_line_width(m_win_id,1);
-    draw_circle(m_win_id,&m_create_row,&m_create_col,&m_create_radius);
-    disp_circle(m_win_id,m_create_row,m_create_col,m_create_radius);
-    gen_circle(&m_detect_region, m_create_row,m_create_col,m_create_radius);
-    //判断文件夹是否存在，不存在则创建
-    QDir dir(m_path_exe + "/region/");
-    dir.setFilter(QDir::Files | QDir::NoSymLinks);
-    if (false == dir.exists())
-    {
-        bool is_mkdir = dir.mkdir(m_path_exe + "/region/");
-        if (false == is_mkdir)
-        {
-            print_qmess(QString("创建文件夹失败"));
-            clear_window(m_win_id);
-            return;
-        }
-    }
-    //保存区域
-    QString qdstr = m_path_exe + QString("/region/DetectionRegion.hobj");
-    QByteArray ba = qdstr.toLocal8Bit();
-    char* ch = ba.data();
-    try
-    {
-        write_region(m_detect_region,ch);
-    }
-    catch(...)
-    {
-        print_qmess(QString("保存失败"));
-        clear_window(m_win_id);
-        return;
-    }
-    print_qmess(QString("创建成功"));
+    create_region(m_detect_region,"DetectionRegion");
 }
 
 //按钮：创建检测区域
 void DialogShapeModel::on_pushButtonScrewRegion_clicked()
 {
-    //提示画一个圆圈
-    set_color(m_win_id,"green");
-    set_draw(m_win_id,"margin");
-    set_line_width(m_win_id,1);
-    draw_circle(m_win_id,&m_screw_row,&m_screw_col,&m_screw_radius);
-    disp_circle(m_win_id,m_screw_row,m_screw_col,m_screw_radius);
-    gen_circle(&m_screw_region, m_screw_row,m_screw_col,m_screw_radius);
-    //判断文件夹是否存在，不存在则创建
-    QDir dir(m_path_exe + "/region/");
-    dir.setFilter(QDir::Files | QDir::NoSymLinks);
-    if (false == dir.exists())
+    create_region(m_screw_region,"ScrewRegion");
+}
+
+//创建批头号对应的内圆区域
+void DialogShapeModel::on_pushButtonInnerCircleRegion_clicked()
+{
+    if(ui->combo_Type->currentIndex()<1)
     {
-        bool is_mkdir = dir.mkdir(m_path_exe + "/region/");
-        if (false == is_mkdir)
-        {
-            print_qmess(QString("创建文件夹失败"));
-            clear_window(m_win_id);
-            return;
-        }
-    }
-    //保存区域
-    QString qdstr = m_path_exe + QString("/region/ScrewRegion.hobj");
-    QByteArray ba = qdstr.toLocal8Bit();
-    char* ch = ba.data();
-    try
-    {
-        write_region(m_screw_region,ch);
-    }
-    catch(...)
-    {
-        print_qmess(QString("保存失败"));
-        clear_window(m_win_id);
+        print_qmess(QString("请选择批头号"));
         return;
     }
-    print_qmess(QString("创建成功"));
+    create_region(m_inner_circle_region,"InnerCircle-"+QString::number(ui->combo_Type->currentIndex()));
 }
 
 //选择是否在连续采集中显示圆形区域
@@ -592,7 +535,7 @@ int DialogShapeModel::draw_show()
 {
     if(isDrawing)
     {
-        print_qmess(QString("请完成当前模板绘制"));
+        print_qmess(QString("请完成当前图形绘制"));
         return 0;
     }
 
@@ -648,6 +591,57 @@ int DialogShapeModel::draw_show()
         return -1;
     }
 
+    isDrawing=false;
+    return 0;
+}
+
+//绘制圆形区域
+int DialogShapeModel::create_region(Hobject &region, QString name)
+{
+    if(isDrawing)
+    {
+        print_qmess(QString("请完成当前图形绘制"));
+        return 0;
+    }
+
+    isDrawing=true;
+
+    HTuple draw_row,draw_column,draw_radius;
+    //提示画一个圆圈
+    set_color(m_win_id,"green");
+    set_draw(m_win_id,"margin");
+    set_line_width(m_win_id,1);
+    draw_circle(m_win_id,&draw_row,&draw_column,&draw_radius);
+    disp_circle(m_win_id,draw_row,draw_column,draw_radius);
+    gen_circle(&region, draw_row,draw_column,draw_radius);
+    //判断文件夹是否存在，不存在则创建
+    QDir dir(m_path_exe + "/region/");
+    dir.setFilter(QDir::Files | QDir::NoSymLinks);
+    if (false == dir.exists())
+    {
+        bool is_mkdir = dir.mkdir(m_path_exe + "/region/");
+        if (false == is_mkdir)
+        {
+            print_qmess(QString("创建文件夹失败"));
+            clear_window(m_win_id);
+            return -2;
+        }
+    }
+    //保存区域
+    QString qdstr = m_path_exe + QString("/region/"+name+".hobj");
+    QByteArray ba = qdstr.toLocal8Bit();
+    char* ch = ba.data();
+    try
+    {
+        write_region(region,ch);
+    }
+    catch(...)
+    {
+        print_qmess(QString("保存失败"));
+        clear_window(m_win_id);
+        return -1;
+    }
+    print_qmess(QString("创建成功"));
     isDrawing=false;
     return 0;
 }

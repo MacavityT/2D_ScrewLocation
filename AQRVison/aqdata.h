@@ -20,9 +20,10 @@ public:
     ~AQData();
 
     int data_write(int mark,double xcoor, double ycoor, double pix_x, double pix_y , double offsetx, double offsety, QString status, bool enable);
-    int data_write(int threshold, int modelIndex,int screwdriver, int screw, double xcoor, double ycoor, double pix_x, double pix_y ,
+    int data_write(int modelIndex,int screwdriver, int screw, double xcoor, double ycoor, double pix_x, double pix_y ,
                    double offsetx, double offsety, double exact_offset_x, double exact_offset_y,double x_diff,double y_diff,
-                   double xcoor_revert,double ycoor_revert, double x_work_diff, double y_work_diff, QString status ,bool enable);
+                   double xcoor_revert,double ycoor_revert, double x_work_diff, double y_work_diff,
+                   double circularity_light,double circularity_dark,QString status ,bool enable);
 
 private:
     QFile* m_file;

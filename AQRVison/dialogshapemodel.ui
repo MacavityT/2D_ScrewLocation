@@ -123,7 +123,7 @@
     <rect>
      <x>20</x>
      <y>510</y>
-     <width>571</width>
+     <width>641</width>
      <height>71</height>
     </rect>
    </property>
@@ -133,7 +133,7 @@
    <widget class="QComboBox" name="combo_Type">
     <property name="geometry">
      <rect>
-      <x>30</x>
+      <x>20</x>
       <y>20</y>
       <width>80</width>
       <height>30</height>
@@ -172,7 +172,7 @@ border-radius:10px;</string>
    <widget class="QPushButton" name="pushButton_confirm">
     <property name="geometry">
      <rect>
-      <x>370</x>
+      <x>360</x>
       <y>20</y>
       <width>80</width>
       <height>30</height>
@@ -189,7 +189,7 @@ border-radius:10px;</string>
    <widget class="QComboBox" name="combo_ShangStd">
     <property name="geometry">
      <rect>
-      <x>130</x>
+      <x>120</x>
       <y>20</y>
       <width>80</width>
       <height>30</height>
@@ -361,7 +361,7 @@ border-radius:10px;</string>
    <widget class="QPushButton" name="pushButtonCreateShapeModel">
     <property name="geometry">
      <rect>
-      <x>470</x>
+      <x>460</x>
       <y>20</y>
       <width>80</width>
       <height>30</height>
@@ -378,7 +378,7 @@ border-radius:10px;</string>
    <widget class="QComboBox" name="combo_Score">
     <property name="geometry">
      <rect>
-      <x>230</x>
+      <x>220</x>
       <y>20</y>
       <width>121</width>
       <height>30</height>
@@ -446,6 +446,23 @@ border-radius:10px;</string>
       <string>1.0</string>
      </property>
     </item>
+   </widget>
+   <widget class="QPushButton" name="pushButtonInnerCircleRegion">
+    <property name="geometry">
+     <rect>
+      <x>550</x>
+      <y>20</y>
+      <width>80</width>
+      <height>30</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color:rgb(225,225,225);
+border-radius:10px;</string>
+    </property>
+    <property name="text">
+     <string>内圆区域</string>
+    </property>
    </widget>
   </widget>
   <widget class="QPushButton" name="pushButtonSaveOne">

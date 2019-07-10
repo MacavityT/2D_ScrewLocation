@@ -38,7 +38,8 @@ HEADERS  += mainwindow.h \
     modbus_tcp_server.h \
     mythreads.h \
     dialogcalibration.h \
-    dialogsetting.h
+    dialogsetting.h \
+    base_struct.h
 
 FORMS    += mainwindow.ui \
             dialogshapemodel.ui \

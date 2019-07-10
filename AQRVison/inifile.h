@@ -13,6 +13,7 @@ public:
     IniFile();
     ~IniFile();
 
+    int write(const QString& section, const QString& key, const bool& value);
     int write(const QString& section, const QString& key, const int& value);
     int write(const QString& section, const QString& key, const double& value);
     int write(const QString& section, const QString& key, const QString& value);

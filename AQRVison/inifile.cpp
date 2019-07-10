@@ -52,6 +52,13 @@ int IniFile::write(const QString& section, const QString& key, const QString& va
     return 0;
 }
 
+int IniFile::write(const QString& section, const QString& key, const bool& value)
+{
+    configureFile->setValue("/"+section+"/"+key, value);
+
+    return 0;
+}
+
 int IniFile::read(const QString& section, const QString& key, bool& value)
 {
     value = configureFile -> value(section+"/"+key).toBool();

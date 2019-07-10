@@ -84,15 +84,15 @@ int AQData::data_write(int mark,double xcoor, double ycoor, double pix_x, double
 
 }
 
-int AQData::data_write(int threshold, int modelIndex,int screwdriver, int screw, double xcoor, double ycoor, double pix_x, double pix_y ,
+int AQData::data_write(int modelIndex,int screwdriver, int screw, double xcoor, double ycoor, double pix_x, double pix_y ,
                        double offsetx, double offsety, double exact_offset_x, double exact_offset_y,double x_diff,double y_diff,
-                       double xcoor_revert,double ycoor_revert, double x_work_diff, double y_work_diff, QString status ,bool enable)
+                       double xcoor_revert,double ycoor_revert, double x_work_diff, double y_work_diff,
+                       double circularity_light,double circularity_dark,QString status ,bool enable)
 {
     if(!enable)
         return 0;
     //匹配到模板，保存data
     QString content = QDateTime::currentDateTime().toString("yyyy.MM.dd hh:mm:ss:zzz") + ",";
-    content += QString::number(threshold, 10,2) + ",";
     content += QString::number(modelIndex, 10,2) + ",";
     content += QString::number(screwdriver, 10,2) + ",";
     content += QString::number(screw, 10,2) + ",";
@@ -110,6 +110,8 @@ int AQData::data_write(int threshold, int modelIndex,int screwdriver, int screw,
     content += QString::number(ycoor_revert, 10,2) + ",";
     content += QString::number(x_work_diff, 10,2) + ",";
     content += QString::number(y_work_diff, 10,2) + ",";
+    content += QString::number(circularity_light, 10,2) + ",";
+    content += QString::number(circularity_dark, 10,2) + ",";
     content += status + "\n";
 
     if (!m_file->open(QIODevice::Append | QIODevice::Text))

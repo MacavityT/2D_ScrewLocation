@@ -26,6 +26,7 @@ HalconCode/MainDetect/*.cpp
 *.userprefs
 
 # Build results
+aidi_libs/
 [Dd]ebug/
 [Dd]ebugPublic/
 [Rr]elease/

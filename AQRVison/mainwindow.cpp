@@ -45,6 +45,9 @@ MainWindow::MainWindow(QWidget *parent) :
     //建立心跳连接
     m_heartbeat.moveToThread(&m_thread_heartbeat);
     m_thread_heartbeat.start();
+    //加载遮挡识别使能
+    m_ini.read("ShelterDetect","enable",ShelterDetect);
+    ui->checkBox->setChecked(ShelterDetect);
     //开机启动
     ui->pushButton_Connect->click();
     ui->pushButton_Start->click();
@@ -96,7 +99,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
 int MainWindow::start_varia_init()
 {
     m_mark_csv=new AQData(QString("Mark"), QString("Date-Moment,mark,xcoor,ycoor,pix-x,pix-y,offsetx,offsety,status\n"));
-    m_screw_csv=new AQData(QString("Screw"), QString("Date-Moment,threshold,modelIndex,screwdriver,screw,xcoor,ycoor,pix-x,pix-y,offsetx,offsety,exact_offset_x,exact_offset_y,x_diff,y_diff,xcoor_revert,ycoor_revert,x_work_diff,y_work_diff,status\n"));
+    m_screw_csv=new AQData(QString("Screw"), QString("Date-Moment,modelIndex,screwdriver,screw,xcoor,ycoor,pix-x,pix-y,offsetx,offsety,exact_offset_x,exact_offset_y,x_diff,y_diff,xcoor_revert,ycoor_revert,x_work_diff,y_work_diff,circularity_light,circularity_dark,status\n"));
     //exe文件所在路径
     m_path_exe = QCoreApplication::applicationDirPath();
     //cam 3840*2748,Camera size,如果参数写错可能导致图像显示错误
@@ -421,6 +424,22 @@ void MainWindow::on_pushButton_Start_clicked()
     char* ch1_screw = ba1_screw.data();
     read_region(&m_dynamic_region,ch1_screw);
     smallest_circle(m_dynamic_region,&Row,&Column,&m_dynamic_region_radius);
+    //加载内圆区域，先初始化为空
+    for(int i=1; i<5 ; i++)
+    {
+        gen_empty_region(&m_inner_circle_region[i]);
+
+        QString qdstr_inner_circle = m_path_exe + QString("/region/InnerCircle-"+QString::number(i)+".hobj");
+        QFile qfile_inner_circle(qdstr_inner_circle);
+        if(false == qfile_inner_circle.exists())
+        {
+            ui->textBrowser->append(QString("cann't find inner circle region -- ")+QString::number(i));
+            continue;
+        }
+        QByteArray ba_inner_circle=qdstr_inner_circle.toLocal8Bit();
+        char* ch_inner_circle=ba_inner_circle.data();
+        read_region(&m_inner_circle_region[i],ch_inner_circle);
+    }
     //读取仿射变换矩阵（判断是否存在）
     QString mat_file = m_path_exe + "/cal/TransHomMat2D.tup";
     QFile qfile(mat_file);
@@ -461,6 +480,26 @@ void MainWindow::on_pushButton_Start_clicked()
         m_log.write_log("MainWindow::on_pushButton_Start_clicked():Read revert affine trans tuple failed!",true);
         return;
     }
+    //读取线材遮挡分类模型
+    QString model_file = m_path_exe + "/region/WireShelterSVM.gsc";
+    QFile qfile_model(model_file);
+    if(false == qfile_model.exists())
+    {
+        DialogShapeModel::print_qmess(QString("cann't find WireShelterSVM.gsc file!"));
+        if(!DebugEnable) return;
+    }
+    char *ch_model;
+    QByteArray ba_model = model_file.toLatin1();
+    ch_model = ba_model.data();
+    try
+    {
+        read_class_svm(ch_model,&m_svm_handle);
+    }
+    catch(...)
+    {
+        m_log.write_log("MainWindow::on_pushButton_Start_clicked():WireShelterSVM.gsc failed!",true);
+        return;
+    }
     //读取标准点位(拍照位)
     m_ini.read("StandardPosition","ScrewOn_x",m_cal_data.LuoW.x);
     m_ini.read("StandardPosition","ScrewOn_y",m_cal_data.LuoW.y);
@@ -486,6 +525,7 @@ void MainWindow::on_pushButton_Start_clicked()
 //按钮：测试
 void MainWindow::on_pushButton_TestItem_clicked()
 {
+    m_modbus.setupDeviceData(1.0,1.0,1.0,1.0,1.0);
     if(DebugEnable)
     {
         DebugRegionRow=906.039;
@@ -496,7 +536,7 @@ void MainWindow::on_pushButton_TestItem_clicked()
         //读取并显示
         read_image(&m_image, ch);
     //    mark_process(4,1,1);
-        screw_process(1,5,1,2);
+        screw_process(1,1,1,2);
     }
 }
 
@@ -504,6 +544,13 @@ void MainWindow::on_pushButton_TestItem_clicked()
 void MainWindow::on_pushButton_Connect_clicked()
 {
     m_modbus.connection(!connection_status);
+}
+
+//按钮：识别遮挡使能
+void MainWindow::on_checkBox_toggled(bool checked)
+{
+    ShelterDetect=checked;
+    m_ini.write("ShelterDetect","enable",ShelterDetect);
 }
 
 //按钮：保存原图使能
@@ -696,7 +743,16 @@ void MainWindow::mark_process(int mark ,float xcoor ,float ycoor)
         }
         else
         {
-            m_mark_csv->data_write(mark,xcoor,ycoor,0,0,0,0,"Can't find mark",true);
+            scale_image(tem_image,&tem_image,3,-100);
+            err = image_process_mark(tem_image, m_mark_ModelID[use_index],score,pix_x,pix_y);
+            if(0==err)
+            {
+                status=true;
+            }
+            else
+            {
+                m_mark_csv->data_write(mark,xcoor,ycoor,0,0,0,0,"Can't find mark",true);
+            }
         }
 
         if(status) break;
@@ -762,17 +818,6 @@ void MainWindow::mark_process(int mark ,float xcoor ,float ycoor)
             m_mark_csv->data_write(mark,xcoor,ycoor,0,0,0,0,"Generate mark HomMat2D failed",true);
             return;
         }
-    }
-
-    //计算结果保存至param.ini
-    if(m_SaveResult)
-    {
-        m_ini.write("Runtime",error_message+QString("px"),pix_x);
-        m_ini.write("Runtime",error_message+QString("py"),pix_y);
-        m_ini.write("Runtime",error_message+QString("xcoor"),xcoor);
-        m_ini.write("Runtime",error_message+QString("ycoor"),ycoor);
-        m_ini.write("Runtime",error_message+QString("offsetX"),offset_x);
-        m_ini.write("Runtime",error_message+QString("offsetY"),offset_y);
     }
 
     //发送完成信号
@@ -893,6 +938,14 @@ void MainWindow::screw_process(int screwdriver, int screw, float xcoor, float yc
     double wrong_position_x[18]={0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
     double wrong_position_y[18]={0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
     int wrong_index=0;
+    Hobject tem_image;
+    Hobject ImageMult,InnerCircleRegion,ImageInnerCircle;
+    Hobject RegionsLight,RegionDark;
+    HTuple InnerCircleRow,InnerCircleColumn,InnerCircleRadius;
+    HTuple LightArea,LightRow,LightColumn;
+    HTuple DarkArea,DarkRow,DarkColumn;
+    HTuple Features,Features1;
+    HTuple Ratio,Class;
 
     for(int modelIndex=0;modelIndex<modelIndexMax;modelIndex++)
     {
@@ -914,107 +967,64 @@ void MainWindow::screw_process(int screwdriver, int screw, float xcoor, float yc
         }
 
         //正式处理
-        Hobject tem_image,Regions;
-        Hobject Regions1,ConnectedRegions,SelectedRegions,RegionOpening,RegionClosing,SelectedRegions1,RegionUnion,RegionIntersection;
-        for(int i=-1;i<1;i++)
+        copy_image(m_image,&tem_image);
+        median_image(tem_image,&tem_image,"circle",6,"mirrored");
+        scale_image(tem_image,&tem_image,3,-100);
+
+        image_err = image_process_screw(tem_image, (m_ModelID[screwdriver_index])[useModelIndex],score,pix_x,pix_y);
+        if(0 == image_err)
         {
-            if(i==-1)
+            //返回的offset值为当前识别物理位置与记录的标准上螺丝物理位置的偏移量
+            calculate_err = cal_offset_screw(pix_x,pix_y,offset_x,offset_y);
+            if(0 == calculate_err)
             {
-                copy_image(m_image,&tem_image);
-                median_image(tem_image,&tem_image,"circle",6,"mirrored");
-                scale_image(tem_image,&tem_image,3,-100);
-                //分离线材区域，暂时这么写，等待重构
-//                auto_threshold(tem_image,&Regions1,2);
-//                connection(Regions1,&ConnectedRegions);
-//                select_shape(ConnectedRegions, &SelectedRegions, "area", "and", 2000, 999999999999);
-//                opening_circle (SelectedRegions, &RegionOpening, 30);
-//                closing_circle(RegionOpening, &RegionClosing, 30);
-//                select_shape(RegionClosing, &SelectedRegions1, HTuple("circularity").Append("area"),"and",HTuple(0).Append(9999),\
-//                             HTuple(0.3).Append(999999999));
-//                union1(SelectedRegions1, &RegionUnion);
-//                intersection(m_dynamic_region,RegionUnion,&RegionIntersection);
-//                difference(m_dynamic_region,RegionIntersection,&m_dynamic_region);
-            }
-            else
-            {
-                //预处理--1次不同程度二值化
-                median_image(m_image,&tem_image,"circle",6,"mirrored");
-                scale_image(tem_image,&tem_image,3,-100);
-                //分离线材区域，暂时这么写，等待重构
-//                auto_threshold(tem_image,&Regions1,2);
-//                connection(Regions1,&ConnectedRegions);
-//                select_shape(ConnectedRegions, &SelectedRegions, "area", "and", 2000, 999999999999);
-//                opening_circle (SelectedRegions, &RegionOpening, 30);
-//                closing_circle(RegionOpening, &RegionClosing, 30);
-//                select_shape(RegionClosing, &SelectedRegions1, HTuple("circularity").Append("area"),"and",HTuple(0).Append(9999),\
-//                             HTuple(0.3).Append(999999999));
-//                union1(SelectedRegions1, &RegionUnion);
-//                intersection(m_dynamic_region,RegionUnion,&RegionIntersection);
-//                difference(m_dynamic_region,RegionIntersection,&m_dynamic_region);
-
-
-                threshold(tem_image,&Regions,70+i*10,255);
-                region_to_bin(Regions,&tem_image,255,0,2592,1944);
-            }
-
-            image_err = image_process_screw(tem_image, (m_ModelID[screwdriver_index])[useModelIndex],score,pix_x,pix_y);
-            if(0 == image_err)
-            {
-                //返回的offset值为当前识别物理位置与记录的标准上螺丝物理位置的偏移量
-                calculate_err = cal_offset_screw(pix_x,pix_y,offset_x,offset_y);
-                if(0 == calculate_err)
+                for(int i=0;i<3;i++)
                 {
-                    for(int i=0;i<3;i++)
-                    {
-                        x_diff[i]=exact_offset_x-offset_x[i];
-                        y_diff[i]=exact_offset_y-offset_y[i];
+                    x_diff[i]=exact_offset_x-offset_x[i];
+                    y_diff[i]=exact_offset_y-offset_y[i];
 
-                        wrong_position_x[wrong_index]=pix_x[i];
-                        wrong_position_y[wrong_index]=pix_y[i];
-                        wrong_index++;
+                    wrong_position_x[wrong_index]=pix_x[i];
+                    wrong_position_y[wrong_index]=pix_y[i];
+                    wrong_index++;
 
-                        //过程数据保存
-                        for(int n=0;n<3;n++)
-                        {
-                            m_screw_csv->data_write(60+i*10,modelIndex,screwdriver,screw,xcoor,ycoor,pix_x[n],pix_y[n],
-                                                   offset_x[n],offset_y[n],exact_offset_x,exact_offset_y,x_diff[n],y_diff[n],
-                                                    0,0,0,0,"process data",m_SaveData);
-                        }
-
-                        if(x_diff[i]>x_offsetMin && x_diff[i]<x_offsetMax && y_diff[i]>y_offsetMin && y_diff[i]<y_offsetMax)
-                        {
-                            x_coor=offset_x[i];
-                            y_coor=offset_y[i];
-                            m_modbus.setupDeviceData(x_coor,y_coor,1.0,NULL,NULL);
-                            success_index=i;
-                            status=true;
-                            //结果OK，跳出计算偏差值循环
-                            break;
-                        }
-                    }
-                    //结果OK，跳出预处理循环
-                    if(status) break;
-                }
-                else
-                {
-                    //计算失败，数据保存
+                    //过程数据保存
                     for(int n=0;n<3;n++)
                     {
-                        m_screw_csv->data_write(60+i*10,modelIndex,screwdriver,screw,xcoor,ycoor,pix_x[n],pix_y[n],
+                        m_screw_csv->data_write(modelIndex,screwdriver,screw,xcoor,ycoor,pix_x[n],pix_y[n],
                                                offset_x[n],offset_y[n],exact_offset_x,exact_offset_y,x_diff[n],y_diff[n],
-                                               0,0,0,0,"Calculate failed",true);
+                                                0,0,0,0,0,0,"process data",m_SaveData);
+                    }
+
+                    if(x_diff[i]>x_offsetMin && x_diff[i]<x_offsetMax && y_diff[i]>y_offsetMin && y_diff[i]<y_offsetMax)
+                    {
+                        x_coor=offset_x[i];
+                        y_coor=offset_y[i];
+                        success_index=i;
+                        status=true;
+                        //结果OK，跳出计算偏差值循环
+                        break;
                     }
                 }
             }
             else
             {
-                //找不到螺丝，数据保存
+                //计算失败，数据保存
                 for(int n=0;n<3;n++)
                 {
-                    m_screw_csv->data_write(60+i*10,modelIndex,screwdriver,screw,xcoor,ycoor,pix_x[n],pix_y[n],
+                    m_screw_csv->data_write(modelIndex,screwdriver,screw,xcoor,ycoor,pix_x[n],pix_y[n],
                                            offset_x[n],offset_y[n],exact_offset_x,exact_offset_y,x_diff[n],y_diff[n],
-                                           0,0,0,0,"Can't find screw.",true);
+                                           0,0,0,0,0,0,"Calculate failed",true);
                 }
+            }
+        }
+        else
+        {
+            //找不到螺丝，数据保存
+            for(int n=0;n<3;n++)
+            {
+                m_screw_csv->data_write(modelIndex,screwdriver,screw,xcoor,ycoor,pix_x[n],pix_y[n],
+                                       offset_x[n],offset_y[n],exact_offset_x,exact_offset_y,x_diff[n],y_diff[n],
+                                       0,0,0,0,0,0,"Can't find screw.",true);
             }
         }
         //结果OK，跳出模板遍历循环
@@ -1046,13 +1056,58 @@ void MainWindow::screw_process(int screwdriver, int screw, float xcoor, float yc
         //保存参数
         for(int n=0;n<3;n++)
         {
-            m_screw_csv->data_write(-1,-1,screwdriver,screw,xcoor,ycoor,pix_x[n],pix_y[n],
+            m_screw_csv->data_write(-1,screwdriver,screw,xcoor,ycoor,pix_x[n],pix_y[n],
                                    offset_x[n],offset_y[n],exact_offset_x,exact_offset_y,x_diff[n],y_diff[n],
-                                    0,0,0,0,"Find screw failed or wrong position",true);
+                                    0,0,0,0,0,0,"Find screw failed or wrong position",true);
         }
     }
     else
     {
+        //反算当前拍照点的正确位置
+        double xcoor_revert,ycoor_revert;
+        double x_work_diff,y_work_diff;
+        double x_work=xcoor+offset_x[success_index];
+        double y_work=ycoor+offset_y[success_index];
+        if(!DebugEnable)
+        {
+            affine_trans_point_2d(RevertHomMat2DRunTime,x_work,y_work,&xcoor_revert,&ycoor_revert);
+            x_work_diff=xcoor_revert-xcoor;
+            y_work_diff=ycoor_revert-ycoor;
+        }
+
+        //识别正确，检测是否有线材遮挡
+        smallest_circle(m_inner_circle_region[screwdriver_index],&InnerCircleRow,&InnerCircleColumn,&InnerCircleRadius);
+        if(InnerCircleRadius[0].D()==0.0)
+        {
+            ui->textBrowser->append(error_message+"Can't find inner circle radius\n");
+            m_modbus.setupDeviceData(-1.0,-1.0,1.0,NULL,NULL);
+            m_screw_csv->data_write(-1,screwdriver,screw,xcoor,ycoor,pix_x[success_index],pix_y[success_index],
+                                   offset_x[success_index],offset_y[success_index],exact_offset_x,exact_offset_y,x_diff[success_index],y_diff[success_index],
+                                   xcoor_revert,ycoor_revert,x_work_diff,y_work_diff,0,0,"Can't find inner circle radius",true);
+            return;
+        }
+
+        mult_image(tem_image,tem_image,&ImageMult,0.08,0);
+        gen_circle(&InnerCircleRegion,pix_y[success_index],pix_x[success_index],InnerCircleRadius);
+        reduce_domain(ImageMult,InnerCircleRegion,&ImageInnerCircle);
+        threshold(ImageInnerCircle, &RegionsLight, 200, 255);
+        area_center(RegionsLight, &LightArea, &LightRow, &LightColumn);
+        if(LightArea[0].D()==0.0)
+        {
+            LightArea[0]=-1;
+        }
+        difference(InnerCircleRegion, RegionsLight, &RegionDark);
+        area_center(RegionDark, &DarkArea, &DarkRow, &DarkColumn);
+        if(DarkArea[0].D()==0.0)
+        {
+            DarkArea[0]=-1;
+        }
+        calculate_features(RegionsLight,&Features);
+        calculate_features(RegionDark,&Features1);
+        tuple_concat(Features, Features1, &Features);
+        Ratio = (LightArea.Real())/(DarkArea.Real());
+        tuple_concat(Features, Ratio, &Features);
+        classify_class_svm(m_svm_handle, Features, 1, &Class);
         //显示当前图片
         HTuple px = HTuple(pix_x[success_index]);
         HTuple py = HTuple(pix_y[success_index]);
@@ -1061,18 +1116,24 @@ void MainWindow::screw_process(int screwdriver, int screw, float xcoor, float yc
         image_show(m_image,py,px,offsetY,offsetX,true);
         //图像-原图保存-处理后截图保存
         image_save(m_image,error_message,m_SaveRaw,m_SaveResult);
-        //反算当前拍照点的正确位置
-        double xcoor_revert,ycoor_revert;
-        double x_work_diff,y_work_diff;
-        double x_work=xcoor+offset_x[success_index];
-        double y_work=ycoor+offset_y[success_index];
-        affine_trans_point_2d(RevertHomMat2DRunTime,x_work,y_work,&xcoor_revert,&ycoor_revert);
-        x_work_diff=xcoor_revert-xcoor;
-        y_work_diff=ycoor_revert-ycoor;
+        //判断线材是否遮挡
+        if(Class[0].I()==1&&ShelterDetect)
+        {
+            ui->textBrowser->append(error_message+"The screw may be kept out\n");
+            m_modbus.setupDeviceData(-1.0,-1.0,1.0,NULL,NULL);
+            m_screw_csv->data_write(-1,screwdriver,screw,xcoor,ycoor,pix_x[success_index],pix_y[success_index],
+                                   offset_x[success_index],offset_y[success_index],exact_offset_x,exact_offset_y,x_diff[success_index],y_diff[success_index],
+                                   xcoor_revert,ycoor_revert,x_work_diff,y_work_diff,0,0,"The screw may be kept out",true);
+            disp_message (m_win_id, "Screw may be kept out!",\
+                          "window", 100, 40, "red","true");
+            return;
+        }
+        //发送坐标信息
+        m_modbus.setupDeviceData(x_coor,y_coor,1.0,NULL,NULL);
         //保存坐标
-        m_screw_csv->data_write(-1,-1,screwdriver,screw,xcoor,ycoor,pix_x[success_index],pix_y[success_index],
+        m_screw_csv->data_write(-1,screwdriver,screw,xcoor,ycoor,pix_x[success_index],pix_y[success_index],
                                offset_x[success_index],offset_y[success_index],exact_offset_x,exact_offset_y,x_diff[success_index],y_diff[success_index],
-                               xcoor_revert,ycoor_revert,x_work_diff,y_work_diff,"OK",m_SaveData);
+                               xcoor_revert,ycoor_revert,x_work_diff,y_work_diff,0,0,"OK",m_SaveData);
     }
 }
 
@@ -1230,6 +1291,27 @@ int MainWindow::cal_offset_revert(double xcoor ,double ycoor ,double screw_x,dou
     }
 
     return 0;
+}
+
+void MainWindow::calculate_features (Hobject ho_Region, HTuple *hv_Features)
+{
+
+  // Local iconic variables
+  Hobject  ho_RegionClosing;
+
+  // Local control variables
+  HTuple  hv_Area, hv_Row, hv_Column, hv_Compactness;
+  HTuple  hv_PSI1, hv_PSI2, hv_PSI3, hv_PSI4, hv_Convexity;
+  HTuple  hv_Circularity;
+
+  area_center(ho_Region, &hv_Area, &hv_Row, &hv_Column);
+  compactness(ho_Region, &hv_Compactness);
+  moments_region_central_invar(ho_Region, &hv_PSI1, &hv_PSI2, &hv_PSI3, &hv_PSI4);
+  convexity(ho_Region, &hv_Convexity);
+  closing_circle(ho_Region, &ho_RegionClosing, 200);
+  circularity(ho_RegionClosing, &hv_Circularity);
+  (*hv_Features) = (((((((hv_Area.Concat(hv_Compactness)).Concat(hv_PSI1)).Concat(hv_PSI2)).Concat(hv_PSI3)).Concat(hv_PSI4)).Concat(hv_Convexity)).Concat(hv_Circularity)).Real();
+  return;
 }
 
 

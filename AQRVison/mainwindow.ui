@@ -52,7 +52,7 @@
     <property name="geometry">
      <rect>
       <x>760</x>
-      <y>150</y>
+      <y>110</y>
       <width>211</width>
       <height>101</height>
      </rect>
@@ -153,9 +153,9 @@
     <property name="geometry">
      <rect>
       <x>760</x>
-      <y>270</y>
+      <y>240</y>
       <width>211</width>
-      <height>101</height>
+      <height>131</height>
      </rect>
     </property>
     <property name="title">
@@ -239,6 +239,26 @@
      </property>
      <property name="text">
       <string>连接选项</string>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="checkBox">
+     <property name="geometry">
+      <rect>
+       <x>60</x>
+       <y>100</y>
+       <width>91</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>Arial Black</family>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="text">
+      <string>遮挡识别</string>
      </property>
     </widget>
    </widget>
