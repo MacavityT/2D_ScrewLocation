@@ -26,7 +26,8 @@ SOURCES += main.cpp\
     modbus_tcp_server.cpp \
     mythreads.cpp \
     dialogcalibration.cpp \
-    dialogsetting.cpp
+    dialogsetting.cpp \
+    aidi_detect.cpp
 
 HEADERS  += mainwindow.h \
             halfunc.h \
@@ -39,7 +40,7 @@ HEADERS  += mainwindow.h \
     mythreads.h \
     dialogcalibration.h \
     dialogsetting.h \
-    base_struct.h
+    base_struct.h \
 
 FORMS    += mainwindow.ui \
             dialogshapemodel.ui \
@@ -50,12 +51,28 @@ INCLUDEPATH += "D:/Program Files/MVTec/HALCON-13.0/include/"
 
 INCLUDEPATH += "D:/Program Files/Basler/Development/include/"
 
+INCLUDEPATH += "E:/WorkingData/ProjectData/HongFu_Locate/ProjectCode/aidi_libs/334/aidi_vision334/include"
+
+INCLUDEPATH += "E:/WorkingData/ProjectData/HongFu_Locate/ProjectCode/aidi_libs/334/jsoncpp/include"
+
+INCLUDEPATH += "E:/WorkingData/ProjectData/HongFu_Locate/ProjectCode/aidi_libs/334/opencv3.3.0.0.1/include"
+
 LIBS        += -L$$quote(D:\Program Files\MVTec\HALCON-13.0\lib\x64-win64) \
                -lhalcon \
                -lhalconcpp10 \
                -lhalconcpp
 
 LIBS        += -L$$quote(D:\Program Files\Basler\Development\lib\x64) \
+
+LIBS        += -L$$quote(E:\WorkingData\ProjectData\HongFu_Locate\ProjectCode\aidi_libs\334\opencv3.3.0.0.1\build\Release\x64) \
+               -lopencv_ts300 \
+               -lopencv_world300 \
+
+LIBS        += -L$$quote(E:\WorkingData\ProjectData\HongFu_Locate\ProjectCode\aidi_libs\334\jsoncpp\build\Release\x64) \
+               -ljson_cpp_dll
+
+LIBS        += -L$$quote(E:\WorkingData\ProjectData\HongFu_Locate\ProjectCode\aidi_libs\334\aidi_vision334\Build\Release\x64) \
+               -laidi_vision334
 
 RESOURCES += aqlogo.qrc
 

@@ -1,4 +1,4 @@
-#include "json/json.h"
+﻿#include "json/json.h"
 #include "opencv2\opencv.hpp"
 
 struct BaseDefect{
