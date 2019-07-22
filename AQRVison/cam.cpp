@@ -96,7 +96,7 @@ int basler_cam::snap(int cam_index)
        // Image grabbed successfully?
        if (!ptrGrabResult->GrabSucceeded())
        {
-           return -1;
+           return -2;
        }
        (uint8_t *) ptrGrabResult->GetBuffer();
        memcpy(pImageBuffer[cam_index],ptrGrabResult->GetBuffer(), m_cam_width*m_cam_height*sizeof(uint8_t));
@@ -107,7 +107,7 @@ int basler_cam::snap(int cam_index)
         // Error handling.
         //cerr << "An exception occurred." << endl
         e.GetDescription();
-        return -1;
+        return -3;
     }
 
     return 0;
