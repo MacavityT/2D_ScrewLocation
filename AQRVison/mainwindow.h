@@ -22,6 +22,7 @@
 #include "dialogshapemodel.h"
 #include "cam.h"
 #include "aqdata.h"
+#include "aidi_detect.h"
 #include "aqlog.h"
 #include "inifile.h"
 #include "modbus_tcp_server.h"
@@ -61,6 +62,7 @@ public:
     static bool Runtime;
     //遮挡识别
     bool ShelterDetect=false;
+    AIDI_DETECT* aidi_detect;
     //data模块
     AQData* m_mark_csv;
     AQData* m_screw_csv;
@@ -121,7 +123,6 @@ public:
     int cal_offset_mark(double x,double y,double &world_offset_x, double &world_offset_y);
     int cal_offset_screw(double x[],double y[],double world_offset_x[], double world_offset_y[]);
     int cal_offset_revert(double xcoor ,double ycoor ,double screw_x,double screw_y,double& pix_x, double& pix_y);
-    void calculate_features (Hobject ho_Region, HTuple *hv_Features);
     float x_coor,y_coor;//偏移量结果，如果未识别到则结果不变
     //处理后显示
     int image_show(Hobject& Image,HTuple& findRow,HTuple& findCol,HTuple& offsetRow,HTuple& offsetCol,bool bState);

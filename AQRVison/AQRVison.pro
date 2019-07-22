@@ -41,6 +41,7 @@ HEADERS  += mainwindow.h \
     dialogcalibration.h \
     dialogsetting.h \
     base_struct.h \
+    aidi_detect.h
 
 FORMS    += mainwindow.ui \
             dialogshapemodel.ui \
@@ -77,5 +78,3 @@ LIBS        += -L$$quote(E:\WorkingData\ProjectData\HongFu_Locate\ProjectCode\ai
 RESOURCES += aqlogo.qrc
 
 QT += serialport serialbus
-
-CONFIG += c++11

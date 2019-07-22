@@ -7,10 +7,9 @@
 #include <math.h>
 #include <bitset>
 #include <iostream>
+#include <QDebug>
 
 using namespace Halcon;
-
-int save_index=0;
 
 bool MainWindow::Runtime=false;
 ////界面构造及初始化
@@ -48,6 +47,7 @@ MainWindow::MainWindow(QWidget *parent) :
     //加载遮挡识别使能
     m_ini.read("ShelterDetect","enable",ShelterDetect);
     ui->checkBox->setChecked(ShelterDetect);
+    aidi_detect = new AIDI_DETECT(m_path_exe.toStdString());
     //开机启动
     ui->pushButton_Connect->click();
     ui->pushButton_Start->click();
@@ -57,6 +57,7 @@ MainWindow::~MainWindow()
 {
     delete m_mark_csv;
     delete m_screw_csv;
+    delete aidi_detect;
     //回收心跳连接线程
     m_thread_heartbeat.terminate();
     m_thread_heartbeat.wait(0);
@@ -480,26 +481,6 @@ void MainWindow::on_pushButton_Start_clicked()
         m_log.write_log("MainWindow::on_pushButton_Start_clicked():Read revert affine trans tuple failed!",true);
         return;
     }
-    //读取线材遮挡分类模型
-    QString model_file = m_path_exe + "/region/WireShelterSVM.gsc";
-    QFile qfile_model(model_file);
-    if(false == qfile_model.exists())
-    {
-        DialogShapeModel::print_qmess(QString("cann't find WireShelterSVM.gsc file!"));
-        if(!DebugEnable) return;
-    }
-    char *ch_model;
-    QByteArray ba_model = model_file.toLatin1();
-    ch_model = ba_model.data();
-    try
-    {
-        read_class_svm(ch_model,&m_svm_handle);
-    }
-    catch(...)
-    {
-        m_log.write_log("MainWindow::on_pushButton_Start_clicked():WireShelterSVM.gsc failed!",true);
-        return;
-    }
     //读取标准点位(拍照位)
     m_ini.read("StandardPosition","ScrewOn_x",m_cal_data.LuoW.x);
     m_ini.read("StandardPosition","ScrewOn_y",m_cal_data.LuoW.y);
@@ -525,7 +506,6 @@ void MainWindow::on_pushButton_Start_clicked()
 //按钮：测试
 void MainWindow::on_pushButton_TestItem_clicked()
 {
-    m_modbus.setupDeviceData(1.0,1.0,1.0,1.0,1.0);
     if(DebugEnable)
     {
         DebugRegionRow=906.039;
@@ -536,7 +516,9 @@ void MainWindow::on_pushButton_TestItem_clicked()
         //读取并显示
         read_image(&m_image, ch);
     //    mark_process(4,1,1);
-        screw_process(1,1,1,2);
+//        screw_process(1,1,1,2);
+        bool status = aidi_detect->test_factory_runner(m_image);
+        qDebug()<<"Result is"<<status;
     }
 }
 
@@ -939,13 +921,8 @@ void MainWindow::screw_process(int screwdriver, int screw, float xcoor, float yc
     double wrong_position_y[18]={0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
     int wrong_index=0;
     Hobject tem_image;
-    Hobject ImageMult,InnerCircleRegion,ImageInnerCircle;
-    Hobject RegionsLight,RegionDark;
+    Hobject ImageCrop;
     HTuple InnerCircleRow,InnerCircleColumn,InnerCircleRadius;
-    HTuple LightArea,LightRow,LightColumn;
-    HTuple DarkArea,DarkRow,DarkColumn;
-    HTuple Features,Features1;
-    HTuple Ratio,Class;
 
     for(int modelIndex=0;modelIndex<modelIndexMax;modelIndex++)
     {
@@ -1076,48 +1053,32 @@ void MainWindow::screw_process(int screwdriver, int screw, float xcoor, float yc
         }
 
         //识别正确，检测是否有线材遮挡
-        smallest_circle(m_inner_circle_region[screwdriver_index],&InnerCircleRow,&InnerCircleColumn,&InnerCircleRadius);
-        if(InnerCircleRadius[0].D()==0.0)
+        bool shelter=true;
+        if(ShelterDetect)
         {
-            ui->textBrowser->append(error_message+"Can't find inner circle radius\n");
-            m_modbus.setupDeviceData(-1.0,-1.0,1.0,NULL,NULL);
-            m_screw_csv->data_write(-1,screwdriver,screw,xcoor,ycoor,pix_x[success_index],pix_y[success_index],
-                                   offset_x[success_index],offset_y[success_index],exact_offset_x,exact_offset_y,x_diff[success_index],y_diff[success_index],
-                                   xcoor_revert,ycoor_revert,x_work_diff,y_work_diff,0,0,"Can't find inner circle radius",true);
-            return;
+            smallest_circle(m_inner_circle_region[screwdriver_index],&InnerCircleRow,&InnerCircleColumn,&InnerCircleRadius);
+            if(InnerCircleRadius[0].D()==0.0)
+            {
+                ui->textBrowser->append(error_message+"Can't find inner circle radius\n");
+                m_modbus.setupDeviceData(-1.0,-1.0,1.0,NULL,NULL);
+                m_screw_csv->data_write(-1,screwdriver,screw,xcoor,ycoor,pix_x[success_index],pix_y[success_index],
+                                       offset_x[success_index],offset_y[success_index],exact_offset_x,exact_offset_y,x_diff[success_index],y_diff[success_index],
+                                       xcoor_revert,ycoor_revert,x_work_diff,y_work_diff,0,0,"Can't find inner circle radius",true);
+                return;
+            }
+            crop_rectangle1(m_image,&ImageCrop,pix_y[success_index]-InnerCircleRadius[0].D(),pix_x[success_index]-InnerCircleRadius[0].D(),
+                    pix_y[success_index]+InnerCircleRadius[0].D(),pix_x[success_index]+InnerCircleRadius[0].D());
+            shelter=aidi_detect->test_factory_runner(ImageCrop);
         }
 
-        mult_image(tem_image,tem_image,&ImageMult,0.08,0);
-        gen_circle(&InnerCircleRegion,pix_y[success_index],pix_x[success_index],InnerCircleRadius);
-        reduce_domain(ImageMult,InnerCircleRegion,&ImageInnerCircle);
-        threshold(ImageInnerCircle, &RegionsLight, 200, 255);
-        area_center(RegionsLight, &LightArea, &LightRow, &LightColumn);
-        if(LightArea[0].D()==0.0)
-        {
-            LightArea[0]=-1;
-        }
-        difference(InnerCircleRegion, RegionsLight, &RegionDark);
-        area_center(RegionDark, &DarkArea, &DarkRow, &DarkColumn);
-        if(DarkArea[0].D()==0.0)
-        {
-            DarkArea[0]=-1;
-        }
-        calculate_features(RegionsLight,&Features);
-        calculate_features(RegionDark,&Features1);
-        tuple_concat(Features, Features1, &Features);
-        Ratio = (LightArea.Real())/(DarkArea.Real());
-        tuple_concat(Features, Ratio, &Features);
-        classify_class_svm(m_svm_handle, Features, 1, &Class);
         //显示当前图片
         HTuple px = HTuple(pix_x[success_index]);
         HTuple py = HTuple(pix_y[success_index]);
         HTuple offsetX=HTuple(offset_x[success_index]);
         HTuple offsetY=HTuple(offset_y[success_index]);
         image_show(m_image,py,px,offsetY,offsetX,true);
-        //图像-原图保存-处理后截图保存
-        image_save(m_image,error_message,m_SaveRaw,m_SaveResult);
         //判断线材是否遮挡
-        if(Class[0].I()==1&&ShelterDetect)
+        if(!shelter)
         {
             ui->textBrowser->append(error_message+"The screw may be kept out\n");
             m_modbus.setupDeviceData(-1.0,-1.0,1.0,NULL,NULL);
@@ -1128,6 +1089,8 @@ void MainWindow::screw_process(int screwdriver, int screw, float xcoor, float yc
                           "window", 100, 40, "red","true");
             return;
         }
+        //图像-原图保存-处理后截图保存
+        image_save(m_image,error_message,m_SaveRaw,m_SaveResult);
         //发送坐标信息
         m_modbus.setupDeviceData(x_coor,y_coor,1.0,NULL,NULL);
         //保存坐标
@@ -1292,28 +1255,6 @@ int MainWindow::cal_offset_revert(double xcoor ,double ycoor ,double screw_x,dou
 
     return 0;
 }
-
-void MainWindow::calculate_features (Hobject ho_Region, HTuple *hv_Features)
-{
-
-  // Local iconic variables
-  Hobject  ho_RegionClosing;
-
-  // Local control variables
-  HTuple  hv_Area, hv_Row, hv_Column, hv_Compactness;
-  HTuple  hv_PSI1, hv_PSI2, hv_PSI3, hv_PSI4, hv_Convexity;
-  HTuple  hv_Circularity;
-
-  area_center(ho_Region, &hv_Area, &hv_Row, &hv_Column);
-  compactness(ho_Region, &hv_Compactness);
-  moments_region_central_invar(ho_Region, &hv_PSI1, &hv_PSI2, &hv_PSI3, &hv_PSI4);
-  convexity(ho_Region, &hv_Convexity);
-  closing_circle(ho_Region, &ho_RegionClosing, 200);
-  circularity(ho_RegionClosing, &hv_Circularity);
-  (*hv_Features) = (((((((hv_Area.Concat(hv_Compactness)).Concat(hv_PSI1)).Concat(hv_PSI2)).Concat(hv_PSI3)).Concat(hv_PSI4)).Concat(hv_Convexity)).Concat(hv_Circularity)).Real();
-  return;
-}
-
 
 //图片保存（原图及处理后图片，处理后图片为屏幕截图）
 int MainWindow::image_save(Hobject& Image, QString name, bool bIsSaveRaw, bool bIsSaveResult)

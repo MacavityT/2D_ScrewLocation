@@ -461,7 +461,7 @@ border-radius:10px;</string>
 border-radius:10px;</string>
     </property>
     <property name="text">
-     <string>内圆区域</string>
+     <string>遮挡区域</string>
     </property>
    </widget>
   </widget>

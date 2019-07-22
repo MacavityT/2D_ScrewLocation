@@ -1,16 +1,11 @@
-﻿#include "opencv2/opencv.hpp"
-#include "infer/aidi.h"
-#include "infer/aidi_factory_runner_wrapper.h"
-#include "infer/aidi_factory_param_wrapper.h"
-#include "base_struct.h"
+﻿#include "aidi_detect.h"
+#include <QString>
+#include <QDebug>
+#include <QTime>
 
-using namespace aq;
-using namespace std;
-using namespace cv;
-
-void test_factory_runner(){
+AIDI_DETECT::AIDI_DETECT(std::string path){
     // 工程路径
-    std::string root_path = "D:/aidi_benchmark/location_sample_mobilephone/Location_0";
+    root_path = path;
     // 模型存储路径
     std::vector<std::string> save_model_path_list;
     save_model_path_list.push_back(root_path + "/model");
@@ -27,23 +22,40 @@ void test_factory_runner(){
     param.use_gpu = false;
     param.use_runtime = false;
 
-    aq::AidiFactoryRunnerWrapper runner("f09d27d9-ceb8-11e8-94ef-525400396520");
-    runner.set_param(param);
-    runner.start();
+    runner = new aq::AidiFactoryRunnerWrapper("391aedab-9d40-11e9-ac29-525400162223");
+    runner->set_param(param);
+    runner->start();
+}
 
-    cv::Mat image = cv::imread(root_path + "/source/1.bmp");
+AIDI_DETECT::AIDI_DETECT()
+{
+
+}
+
+AIDI_DETECT::~AIDI_DETECT()
+{
+    runner->release();
+    delete runner;
+}
+
+bool AIDI_DETECT::test_factory_runner(Hobject Image){
+    cv::Mat image = HObject2Mat(Image);
     aq::BatchAidiImage b_image;
     b_image.set_image_list({ image });
-    runner.set_test_batch_image(b_image);
-    std::vector<std::string> result = runner.get_detect_result();
+    runner->set_test_batch_image(b_image);
+    std::vector<std::string> result = runner->get_detect_result();
     BaseDetectResult struct_result;
     struct_result.from_json(result[0]);
-    std::cout << struct_result.defects[0].area << std::endl;
-
-    std::cout << result[0] << std::endl;
-    b_image.at(0).draw_result(result[0]);
-    b_image.at(0).show(0);
-
+    std::string OK="正常";
+    std::string NG="不正常";
+    if(struct_result.defects[0].type_name==OK)
+    {
+        return true;
+    }
+    else if(struct_result.defects[0].type_name==NG)
+    {
+        return false;
+    }
 }
 
 void test_aidi(){
@@ -99,10 +111,109 @@ void test_factory_runner_wrapper(){
     s_image.show(0, "");
 
     client.set_test_image(s_image);
-    char* result = "";
+    QString Result="";
+    char* result = Result.toLocal8Bit().data();
     client.get_detect_result(result);
 
     //std::cout << (std::string)result << std::endl;
     s_image.show(0, "");
     std::cout << "Finish" << std::endl;
+}
+
+//	转换函数
+Hobject AIDI_DETECT::Mat2HObject(cv::Mat& image)
+{
+    Hobject Hobj=Hobject();
+    int hgt=image.rows;
+    int wid=image.cols;
+    int i;
+    //	CV_8UC3
+    if(image.type() == CV_8UC3)
+    {
+        std::vector<cv::Mat> imgchannel;
+        split(image,imgchannel);
+        cv::Mat imgB=imgchannel[0];
+        cv::Mat imgG=imgchannel[1];
+        cv::Mat imgR=imgchannel[2];
+        uchar* dataR=new uchar[hgt*wid];
+        uchar* dataG=new uchar[hgt*wid];
+        uchar* dataB=new uchar[hgt*wid];
+        for(i=0;i<hgt;i++)
+        {
+            memcpy(dataR+wid*i,imgR.data+imgR.step*i,wid);
+            memcpy(dataG+wid*i,imgG.data+imgG.step*i,wid);
+            memcpy(dataB+wid*i,imgB.data+imgB.step*i,wid);
+        }
+        gen_image3(&Hobj,"byte",wid,hgt,(Hlong)dataR,(Hlong)dataG,(Hlong)dataB);
+        delete []dataR;
+        delete []dataG;
+        delete []dataB;
+        dataR=NULL;
+        dataG=NULL;
+        dataB=NULL;
+    }
+    //	CV_8UCU1
+    else if(image.type() == CV_8UC1)
+    {
+        uchar* data=new uchar[hgt*wid];
+        for(i=0;i<hgt;i++)
+            memcpy(data+wid*i,image.data+image.step*i,wid);
+        gen_image1(&Hobj,"byte",wid,hgt,(Hlong)data);
+        delete[] data;
+        data=NULL;
+    }
+    return Hobj;
+}
+
+cv::Mat AIDI_DETECT::HObject2Mat(Hobject Hobj)
+{
+//    QTime time;
+//    time.start();
+    HTuple htCh=HTuple();
+    HTuple cType;
+    cv::Mat Image;
+    convert_image_type(Hobj,&Hobj,"byte");
+    count_channels(Hobj,&htCh);
+    if(htCh[0].I()==3)
+    {
+        Hobject ImagePart1,ImagePart2,ImagePart3;
+        decompose3(Hobj,&ImagePart1,&ImagePart2,&ImagePart3);
+        rgb3_to_gray(ImagePart1,ImagePart2,ImagePart3,&Hobj);
+        count_channels(Hobj,&htCh);
+    }
+    HTuple wid;
+    HTuple hgt;
+    int W,H;
+    if(htCh[0].I()==1)
+    {
+        HTuple ptr;
+        get_image_pointer1(Hobj,&ptr,&cType,&wid,&hgt);
+        W=wid[0].I();
+        H=hgt[0].I();
+        Image.create(H,W,CV_8UC1);
+        uchar* pdata=(uchar*)ptr[0].L();
+        memcpy(Image.data,pdata,W*H);
+    }
+    else if(htCh[0].I()==3)
+    {
+        HTuple ptrR, ptrG, ptrB;
+        get_image_pointer3(Hobj,&ptrR,&ptrG,&ptrB,&cType,&wid,&hgt);
+        W=wid[0].I();
+        H=hgt[0].I();
+        Image.create(H,W,CV_8UC3);
+        std::vector<cv::Mat> vecM(3);
+        vecM[2].create(H,W,CV_8UC1);
+        vecM[1].create(H,W,CV_8UC1);
+        vecM[0].create(H,W,CV_8UC1);
+        uchar* pr=(uchar*)ptrR[0].L();
+        uchar* pg=(uchar*)ptrG[0].L();
+        uchar* pb=(uchar*)ptrB[0].L();
+        memcpy(vecM[2].data,pr,W*H);
+        memcpy(vecM[1].data,pg,W*H);
+        memcpy(vecM[0].data,pb,W*H);
+        cv::merge(vecM,Image);//这里有问题
+    }
+
+//    qDebug()<<"time cost="<<time.elapsed()/1000.0<<"s";
+    return Image;
 }
