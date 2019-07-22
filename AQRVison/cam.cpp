@@ -78,9 +78,11 @@ int basler_cam::init()
 //相机采集
 int basler_cam::snap(int cam_index)
 {
+    message="Unknown";
     //index 超过 cam num
     if(cam_index + 1 > (*m_cams).GetSize())
     {
+        message="camera index beyond the size";
         return -1;
     }
 
@@ -96,6 +98,7 @@ int basler_cam::snap(int cam_index)
        // Image grabbed successfully?
        if (!ptrGrabResult->GrabSucceeded())
        {
+           message="Grab failed";
            return -2;
        }
        (uint8_t *) ptrGrabResult->GetBuffer();
@@ -106,7 +109,7 @@ int basler_cam::snap(int cam_index)
     {
         // Error handling.
         //cerr << "An exception occurred." << endl
-        e.GetDescription();
+        message=QString("An exception occurred.  ")+e.GetDescription();
         return -3;
     }
 

@@ -20,6 +20,7 @@
 #include <pylon/private/DeviceSpecificInstantCamera.h>
 #include <pylon/DeviceClass.h>
 #include <pylon/NodeMapProxy.h>
+#include <QObject>
 
 namespace Basler_GigECameraParams = Basler_GigECamera;
 
@@ -49,6 +50,7 @@ public:
     DeviceInfoList_t m_devices;
     // Get all attached devices and exit application if no device is found.
     int m_c_maxCamerasToUse;
+    QString message;
 
 private:
     // Get the transport layer factory.
